@@ -1,0 +1,26 @@
+{
+    "instance": {
+        "magic": "APF_VER_1",
+        "variant_select": {
+            "id": 777,
+            "select": false
+        },
+        "data_slots": [
+            {
+                "id": 1,
+                "filename": "imgfihtj.rom",
+                "md5": "2b04af2ae342c1381b93a33da3ac7f86"
+            }
+        ],
+        "memory_writes": [
+            {
+                "address": "0xF1000000",
+                "data": "0x00000a00"
+            },
+            {
+                "address": "0xF2000000",
+                "data": "0x01"
+            }
+        ]
+    }
+}

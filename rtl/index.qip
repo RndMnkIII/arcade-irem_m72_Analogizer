@@ -1,0 +1,31 @@
+# ==============================================================================
+# Quartus Prime QIP Index File
+# ==============================================================================
+set_global_assignment -name SYSTEMVERILOG_FILE [file join $::quartus(qip_path) "irem_m72.sv"]
+set_global_assignment -name SYSTEMVERILOG_FILE [file join $::quartus(qip_path) "m72.sv"]
+set_global_assignment -name SYSTEMVERILOG_FILE [file join $::quartus(qip_path) "sprite.sv"]
+set_global_assignment -name SYSTEMVERILOG_FILE [file join $::quartus(qip_path) "sound.sv"]
+set_global_assignment -name SYSTEMVERILOG_FILE [file join $::quartus(qip_path) "sdram_4w.sv"]
+set_global_assignment -name SYSTEMVERILOG_FILE [file join $::quartus(qip_path) "sample_rom.sv"]
+set_global_assignment -name SYSTEMVERILOG_FILE [file join $::quartus(qip_path) "rom.sv"]
+set_global_assignment -name SYSTEMVERILOG_FILE [file join $::quartus(qip_path) "pal.sv"]
+set_global_assignment -name SYSTEMVERILOG_FILE [file join $::quartus(qip_path) "mcu.sv"]
+set_global_assignment -name SYSTEMVERILOG_FILE [file join $::quartus(qip_path) "m72_pkg.sv"]
+set_global_assignment -name SYSTEMVERILOG_FILE [file join $::quartus(qip_path) "m72_pic.sv"]
+set_global_assignment -name SYSTEMVERILOG_FILE [file join $::quartus(qip_path) "board_b_d.sv"]
+set_global_assignment -name SYSTEMVERILOG_FILE [file join $::quartus(qip_path) "kna70h015.sv"]
+set_global_assignment -name SYSTEMVERILOG_FILE [file join $::quartus(qip_path) "dualport_mailbox.sv"]
+set_global_assignment -name SYSTEMVERILOG_FILE [file join $::quartus(qip_path) "dpramv.sv"]
+set_global_assignment -name SYSTEMVERILOG_FILE [file join $::quartus(qip_path) "ddr_debug.sv"]
+set_global_assignment -name SYSTEMVERILOG_FILE [file join $::quartus(qip_path) "board_b_d_layer.sv"]
+set_global_assignment -name VERILOG_FILE       [file join $::quartus(qip_path) "kna91h014.v"]
+set_global_assignment -name VERILOG_FILE       [file join $::quartus(qip_path) "kna6034201.v"]
+set_global_assignment -name VERILOG_FILE       [file join $::quartus(qip_path) "jtframe_frac_cen.v"]
+
+# ==============================================================================
+# MODULES
+# ==============================================================================
+set_global_assignment -name QIP_FILE [file join $::quartus(qip_path) "../modules/cpu-mc8051/index.qip"]
+set_global_assignment -name QIP_FILE [file join $::quartus(qip_path) "../modules/cpu-t80/index.qip"]
+set_global_assignment -name QIP_FILE [file join $::quartus(qip_path) "../modules/cpu-v30/index.qip"]
+set_global_assignment -name QIP_FILE [file join $::quartus(qip_path) "../modules/sound-jt51/index.qip"]

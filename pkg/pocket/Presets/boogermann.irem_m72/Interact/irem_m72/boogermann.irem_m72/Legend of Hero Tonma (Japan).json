@@ -1,0 +1,363 @@
+{
+    "interact": {
+        "magic": "APF_VER_1",
+        "variables": [
+            {
+                "name": "Reset Core",
+                "id": 1,
+                "type": "action",
+                "enabled": true,
+                "address": "0xF0000000",
+                "value": 1
+            },
+            {
+                "name": "DIP",
+                "id": 1000,
+                "type": "number_u32",
+                "enabled": false,
+                "address": "0xF1000000"
+            },
+            {
+                "name": "Lives",
+                "port": "DSW",
+                "id": 2,
+                "type": "list",
+                "enabled": true,
+                "persist": true,
+                "address": "0xF1000000",
+                "defaultval": 1,
+                "mask": "0xFFFFFFFC",
+                "options": [
+                    {
+                        "name": "2",
+                        "value": "0x00000003"
+                    },
+                    {
+                        "name": "3",
+                        "value": "0x00000000"
+                    },
+                    {
+                        "name": "4",
+                        "value": "0x00000001"
+                    },
+                    {
+                        "name": "5",
+                        "value": "0x00000002"
+                    }
+                ]
+            },
+            {
+                "name": "Demo Sounds",
+                "port": "DSW",
+                "id": 3,
+                "type": "list",
+                "enabled": true,
+                "persist": true,
+                "address": "0xF1000000",
+                "defaultval": 1,
+                "mask": "0xFFFFFFFB",
+                "options": [
+                    {
+                        "name": "Off",
+                        "value": "0x00000000"
+                    },
+                    {
+                        "name": "On",
+                        "value": "0x00000004"
+                    }
+                ]
+            },
+            {
+                "name": "Coin A",
+                "port": "DSW",
+                "id": 4,
+                "type": "list",
+                "enabled": true,
+                "persist": true,
+                "address": "0xF1000000",
+                "defaultval": 3,
+                "mask": "0xFFFFFFCF",
+                "options": [
+                    {
+                        "name": "5 Coins/1 Credit",
+                        "value": "0x00000030"
+                    },
+                    {
+                        "name": "3 Coins/1 Credit",
+                        "value": "0x00000020"
+                    },
+                    {
+                        "name": "2 Coins/1 Credit",
+                        "value": "0x00000010"
+                    },
+                    {
+                        "name": "1 Coin/1 Credit",
+                        "value": "0x00000000"
+                    }
+                ]
+            },
+            {
+                "name": "Coin B",
+                "port": "DSW",
+                "id": 5,
+                "type": "list",
+                "enabled": true,
+                "persist": true,
+                "address": "0xF1000000",
+                "defaultval": 0,
+                "mask": "0xFFFFFF3F",
+                "options": [
+                    {
+                        "name": "1 Coin/2 Credits",
+                        "value": "0x00000000"
+                    },
+                    {
+                        "name": "1 Coin/3 Credits",
+                        "value": "0x00000040"
+                    },
+                    {
+                        "name": "1 Coin/5 Credits",
+                        "value": "0x00000080"
+                    },
+                    {
+                        "name": "1 Coin/6 Credits",
+                        "value": "0x000000C0"
+                    }
+                ]
+            },
+            {
+                "name": "Coinage",
+                "port": "DSW",
+                "id": 6,
+                "type": "list",
+                "enabled": true,
+                "persist": true,
+                "address": "0xF1000000",
+                "defaultval": 8,
+                "mask": "0xFFFFFF0F",
+                "options": [
+                    {
+                        "name": "6 Coins/1 Credit",
+                        "value": "0x00000050"
+                    },
+                    {
+                        "name": "5 Coins/1 Credit",
+                        "value": "0x00000040"
+                    },
+                    {
+                        "name": "4 Coins/1 Credit",
+                        "value": "0x00000030"
+                    },
+                    {
+                        "name": "3 Coins/1 Credit",
+                        "value": "0x00000020"
+                    },
+                    {
+                        "name": "8 Coins/3 Credits",
+                        "value": "0x000000E0"
+                    },
+                    {
+                        "name": "2 Coins/1 Credit",
+                        "value": "0x00000010"
+                    },
+                    {
+                        "name": "5 Coins/3 Credits",
+                        "value": "0x000000D0"
+                    },
+                    {
+                        "name": "3 Coins/2 Credits",
+                        "value": "0x000000C0"
+                    },
+                    {
+                        "name": "1 Coin/1 Credit",
+                        "value": "0x00000000"
+                    },
+                    {
+                        "name": "2 Coins/3 Credits",
+                        "value": "0x000000B0"
+                    },
+                    {
+                        "name": "1 Coin/2 Credits",
+                        "value": "0x00000060"
+                    },
+                    {
+                        "name": "1 Coin/3 Credits",
+                        "value": "0x00000070"
+                    },
+                    {
+                        "name": "1 Coin/4 Credits",
+                        "value": "0x00000080"
+                    },
+                    {
+                        "name": "1 Coin/5 Credits",
+                        "value": "0x00000090"
+                    },
+                    {
+                        "name": "1 Coin/6 Credits",
+                        "value": "0x000000A0"
+                    },
+                    {
+                        "name": "Free Play",
+                        "value": "0x000000F0"
+                    }
+                ]
+            },
+            {
+                "name": "Flip Screen",
+                "port": "DSW",
+                "id": 7,
+                "type": "list",
+                "enabled": true,
+                "persist": true,
+                "address": "0xF1000000",
+                "defaultval": 0,
+                "mask": "0xFFFFFEFF",
+                "options": [
+                    {
+                        "name": "Off",
+                        "value": "0x00000000"
+                    },
+                    {
+                        "name": "On",
+                        "value": "0x00000100"
+                    }
+                ]
+            },
+            {
+                "name": "Cabinet",
+                "port": "DSW",
+                "id": 8,
+                "type": "list",
+                "enabled": true,
+                "persist": true,
+                "address": "0xF1000000",
+                "defaultval": 0,
+                "mask": "0xFFFFFDFF",
+                "options": [
+                    {
+                        "name": "Upright",
+                        "value": "0x00000200"
+                    },
+                    {
+                        "name": "Cocktail",
+                        "value": "0x00000000"
+                    }
+                ]
+            },
+            {
+                "name": "Coin Mode",
+                "port": "DSW",
+                "id": 9,
+                "type": "list",
+                "enabled": true,
+                "persist": true,
+                "address": "0xF1000000",
+                "defaultval": 0,
+                "mask": "0xFFFFFBFF",
+                "options": [
+                    {
+                        "name": "Mode 1",
+                        "value": "0x00000000"
+                    },
+                    {
+                        "name": "Mode 2",
+                        "value": "0x00000400"
+                    }
+                ]
+            },
+            {
+                "name": "Difficulty",
+                "port": "DSW",
+                "id": 10,
+                "type": "list",
+                "enabled": true,
+                "persist": true,
+                "address": "0xF1000000",
+                "defaultval": 1,
+                "mask": "0xFFFFE7FF",
+                "options": [
+                    {
+                        "name": "Easy",
+                        "value": "0x00001800"
+                    },
+                    {
+                        "name": "Normal",
+                        "value": "0x00000000"
+                    },
+                    {
+                        "name": "Hard",
+                        "value": "0x00000800"
+                    },
+                    {
+                        "name": "Hardest",
+                        "value": "0x00001000"
+                    }
+                ]
+            },
+            {
+                "name": "Stop Mode",
+                "port": "DSW",
+                "id": 11,
+                "type": "list",
+                "enabled": true,
+                "persist": true,
+                "address": "0xF1000000",
+                "defaultval": 0,
+                "mask": "0xFFFFDFFF",
+                "options": [
+                    {
+                        "name": "Off",
+                        "value": "0x00000000"
+                    },
+                    {
+                        "name": "On",
+                        "value": "0x00002000"
+                    }
+                ]
+            },
+            {
+                "name": "Invulnerability",
+                "port": "DSW",
+                "id": 12,
+                "type": "list",
+                "enabled": true,
+                "persist": true,
+                "address": "0xF1000000",
+                "defaultval": 0,
+                "mask": "0xFFFFBFFF",
+                "options": [
+                    {
+                        "name": "Off",
+                        "value": "0x00000000"
+                    },
+                    {
+                        "name": "On",
+                        "value": "0x00004000"
+                    }
+                ]
+            },
+            {
+                "name": "Service Mode",
+                "port": "DSW",
+                "id": 13,
+                "type": "list",
+                "enabled": true,
+                "persist": true,
+                "address": "0xF1000000",
+                "defaultval": 0,
+                "mask": "0xFFFF7FFF",
+                "options": [
+                    {
+                        "name": "Off",
+                        "value": "0x00000000"
+                    },
+                    {
+                        "name": "On",
+                        "value": "0x00008000"
+                    }
+                ]
+            }
+        ],
+        "messages": []
+    }
+}

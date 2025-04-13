@@ -1,0 +1,26 @@
+{
+    "instance": {
+        "magic": "APF_VER_1",
+        "variant_select": {
+            "id": 777,
+            "select": false
+        },
+        "data_slots": [
+            {
+                "id": 1,
+                "filename": "rtype.rom",
+                "md5": "84528d823da014e55d992cd286b6dde7"
+            }
+        ],
+        "memory_writes": [
+            {
+                "address": "0xF1000000",
+                "data": "0x0000020c"
+            },
+            {
+                "address": "0xF2000000",
+                "data": "0x00"
+            }
+        ]
+    }
+}

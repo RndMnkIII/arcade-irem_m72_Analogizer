@@ -1,0 +1,26 @@
+{
+    "instance": {
+        "magic": "APF_VER_1",
+        "variant_select": {
+            "id": 777,
+            "select": false
+        },
+        "data_slots": [
+            {
+                "id": 1,
+                "filename": "dkgensan.rom",
+                "md5": "b2ab875f541461bbd790f49de1188b8d"
+            }
+        ],
+        "memory_writes": [
+            {
+                "address": "0xF1000000",
+                "data": "0x00000240"
+            },
+            {
+                "address": "0xF2000000",
+                "data": "0x00"
+            }
+        ]
+    }
+}
