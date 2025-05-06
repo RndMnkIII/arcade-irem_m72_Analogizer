@@ -1024,29 +1024,28 @@ module core_top
 
 
     // H/V offset
-    logic [4:0]	hoffset = 5'h10; //status[20:17];
-    logic [4:0]	voffset = 5'h10; //status[24:21];
+    logic [3:0]	hoffset = 4'h8; //status[20:17];
+    logic [3:0]	voffset = 4'h8; //status[24:21];
 
     always_ff @(posedge clk_sys) begin 
-//        logic start_r, up_r, down_r, left_r, right_r;
-//        start_r <= p1_controls[15];
-//        up_r    <= p1_controls[0];
-//        down_r  <= p1_controls[1];
-//        left_r  <= p1_controls[2];
-//        right_r <= p1_controls[3]; 
+        logic start_r, up_r, down_r, left_r, right_r;
+        start_r <= p1_controls[15];
+        up_r    <= p1_controls[0];
+        down_r  <= p1_controls[1];
+        left_r  <= p1_controls[2];
+        right_r <= p1_controls[3]; 
+        if (p1_controls[15] && !up_r && p1_controls[0] && (voffset < 4'hf)) begin
+            voffset <= voffset + 4'd1;
+        end
+        else if (p1_controls[15] && !down_r && p1_controls[º] && (voffset > 4'h0)) begin
+            voffset <= voffset - 4'd1;
+        end
 
-        if (p1_controls[15] && p1_controls[0] && (voffset < 5'h1f)) begin
-            voffset <= voffset + 5'd1;
+        if (p1_controls[15] && !right_r && p1_controls[3] && (hoffset < 4'hf)) begin
+            hoffset <= hoffset + 4'd1;
         end
-        else if (p1_controls[15] && p1_controls[1] && (voffset > 5'h0)) begin
-            voffset <= voffset - 5'd1;
-        end
-
-        if (p1_controls[15] && p1_controls[3] && (hoffset < 5'h1f)) begin
-            hoffset <= hoffset + 5'd1;
-        end
-        else if (p1_controls[15] && p1_controls[2] && (hoffset > 5'h0)) begin
-            hoffset <= hoffset - 5'd1;
+        else if (p1_controls[15] && !left_r && p1_controls[2] && (hoffset > 4'h0)) begin
+            hoffset <= hoffset - 4'd1;
         end
         
     end

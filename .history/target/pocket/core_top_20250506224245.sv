@@ -892,7 +892,7 @@ module core_top
 
     //create aditional switch to blank Pocket screen.
     wire [23:0] video_rgb_irem72;
-    assign video_rgb_irem72 = (pocket_blank_screen) ? 24'h000000: {core_r,core_g,core_b};
+    assign video_rgb_irem72 = (pocket_blank_screen && !analogizer_sw[0]) ? 24'h000000: {core_r,core_g,core_b};
 
     //switch between Analogizer SNAC and Pocket Controls for P1-P4 (P3,P4 when uses PCEngine Multitap)
     wire [15:0] p1_btn, p2_btn, p3_btn, p4_btn;
@@ -936,7 +936,7 @@ module core_top
         reg [31:0] p1_pocket_btn, p1_pocket_joy;
         reg [31:0] p2_pocket_btn, p2_pocket_joy;
 
-        if(snac_game_cont_type == 5'h0) begin //SNAC is disabled
+        if(snac_game_cont_type == 5'h0 || !analogizer_sw[0]) begin //SNAC is disabled
             p1_controls <= cont1_key;
             p2_controls <= cont2_key;
         end
@@ -1024,29 +1024,29 @@ module core_top
 
 
     // H/V offset
-    logic [4:0]	hoffset = 5'h10; //status[20:17];
-    logic [4:0]	voffset = 5'h10; //status[24:21];
+    logic [3:0]	hoffset = 4'h8; //status[20:17];
+    logic [3:0]	voffset = 4'h8; //status[24:21];
 
     always_ff @(posedge clk_sys) begin 
-//        logic start_r, up_r, down_r, left_r, right_r;
-//        start_r <= p1_controls[15];
-//        up_r    <= p1_controls[0];
-//        down_r  <= p1_controls[1];
-//        left_r  <= p1_controls[2];
-//        right_r <= p1_controls[3]; 
+        logic start_r, up_r, down_r, left_r, right_r;
+        start_r <= p1_controls[15];
+        up_r    <= p1_controls[0];
+        down_r  <= p1_controls[1];
+        left_r  <= p1_controls[2];
+        right_r <= p1_controls[3]; 
 
-        if (p1_controls[15] && p1_controls[0] && (voffset < 5'h1f)) begin
-            voffset <= voffset + 5'd1;
+        if (p1_controls[15] && !up_r && p1_controls[0] && (voffset < 4'hf)) begin
+            voffset <= voffset + 4'd1;
         end
-        else if (p1_controls[15] && p1_controls[1] && (voffset > 5'h0)) begin
-            voffset <= voffset - 5'd1;
+        else if (p1_controls[15] && !down_r && p1_controls[º] && (voffset > 4'h0)) begin
+            voffset <= voffset - 4'd1;
         end
 
-        if (p1_controls[15] && p1_controls[3] && (hoffset < 5'h1f)) begin
-            hoffset <= hoffset + 5'd1;
+        if (p1_controls[15] && !right_r && p1_controls[3] && (hoffset < 4'hf)) begin
+            hoffset <= hoffset + 4'd1;
         end
-        else if (p1_controls[15] && p1_controls[2] && (hoffset > 5'h0)) begin
-            hoffset <= hoffset - 5'd1;
+        else if (p1_controls[15] && !left_r && p1_controls[2] && (hoffset > 4'h0)) begin
+            hoffset <= hoffset - 4'd1;
         end
         
     end

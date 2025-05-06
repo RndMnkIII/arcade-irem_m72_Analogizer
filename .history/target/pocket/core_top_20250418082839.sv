@@ -277,8 +277,6 @@ module core_top
          input  wire  [15:0] cont4_trig
      );
 
-    localparam [7:0] ADDRESS_ANALOGIZER_CONFIG = 8'hF7;
-
     //!-------------------------------------------------------------------------
     //! Infrared
     //!-------------------------------------------------------------------------
@@ -571,21 +569,20 @@ module core_top
 
     always_comb begin
         casex(bridge_addr)
-            32'hF8xxxxxx:                                begin bridge_rd_data <= cmd_bridge_rd_data;        end // APF Bridge (Reserved)
-            32'h10000000:                                begin bridge_rd_data <= nvm_bridge_rd_data_s;      end // HiScore/NVRAM/SRAM Save
-            32'hF0000000:                                begin bridge_rd_data <= int_bridge_rd_data;        end // Reset
-            32'hF0000010:                                begin bridge_rd_data <= int_bridge_rd_data;        end // Service Mode Switch
-            32'hF1000000:                                begin bridge_rd_data <= int_bridge_rd_data;        end // DIP Switches
-            32'hF2000000:                                begin bridge_rd_data <= int_bridge_rd_data;        end // Modifiers
-            32'hF3000000:                                begin bridge_rd_data <= int_bridge_rd_data;        end // A/V Filters
-            32'hF4000000:                                begin bridge_rd_data <= int_bridge_rd_data;        end // Extra DIP Switches
-            32'hF5000000:                                begin bridge_rd_data <= int_bridge_rd_data;        end // NVRAM Size
-            {ADDRESS_ANALOGIZER_CONFIG,24'h0}:           begin bridge_rd_data <= analogizer_bridge_rd_data; end // Analogizer
-            32'hFA000000:                                begin bridge_rd_data <= int_bridge_rd_data;        end // Status Low  [31:0]
-            32'hFB000000:                                begin bridge_rd_data <= int_bridge_rd_data;        end // Status High [63:32]
-            32'hFC000000:                                begin bridge_rd_data <= int_bridge_rd_data;        end // Inputs
-            32'hA0000000:                                begin bridge_rd_data <= int_bridge_rd_data;        end // Analogizer Settings
-            default:                                     begin bridge_rd_data <= 32'h0;                     end
+            32'hF8xxxxxx: begin bridge_rd_data <= cmd_bridge_rd_data;   end // APF Bridge (Reserved)
+            32'h10000000: begin bridge_rd_data <= nvm_bridge_rd_data_s; end // HiScore/NVRAM/SRAM Save
+            32'hF0000000: begin bridge_rd_data <= int_bridge_rd_data;   end // Reset
+            32'hF0000010: begin bridge_rd_data <= int_bridge_rd_data;   end // Service Mode Switch
+            32'hF1000000: begin bridge_rd_data <= int_bridge_rd_data;   end // DIP Switches
+            32'hF2000000: begin bridge_rd_data <= int_bridge_rd_data;   end // Modifiers
+            32'hF3000000: begin bridge_rd_data <= int_bridge_rd_data;   end // A/V Filters
+            32'hF4000000: begin bridge_rd_data <= int_bridge_rd_data;   end // Extra DIP Switches
+            32'hF5000000: begin bridge_rd_data <= int_bridge_rd_data;   end // NVRAM Size
+            32'hFA000000: begin bridge_rd_data <= int_bridge_rd_data;   end // Status Low  [31:0]
+            32'hFB000000: begin bridge_rd_data <= int_bridge_rd_data;   end // Status High [63:32]
+            32'hFC000000: begin bridge_rd_data <= int_bridge_rd_data;   end // Inputs
+            32'hA0000000: begin bridge_rd_data <= int_bridge_rd_data;   end // Analogizer Settings
+            default:      begin bridge_rd_data <= 32'h0;                end
         endcase
     end
 
@@ -700,7 +697,6 @@ module core_top
     wire [BPP_B-1:0] core_b;                 // Video Blue
     wire             core_hs, core_hb;       // Horizontal Sync/Blank
     wire             core_vs, core_vb;       // Vertical Sync/Blank
-    wire             core_ce;                // Pixel Clock Enable (8 MHz)
     wire             interlaced, field;      // Interlaced Video | Even/Odd Field
 
     wire       [5:0] vga_r,  vga_g,  vga_b;  // VGA RGB
@@ -727,9 +723,9 @@ module core_top
         .field                    ( field                    ), // [i]
         .interlaced               ( interlaced               ), // [i]
         // Input Video from Core
-        .core_r                   ( video_rgb_irem72[23:16]  ), // [i]
-        .core_g                   ( video_rgb_irem72[15:8]   ), // [i]
-        .core_b                   ( video_rgb_irem72[7:0]    ), // [i]
+        .core_r                   ( core_r                   ), // [i]
+        .core_g                   ( core_g                   ), // [i]
+        .core_b                   ( core_b                   ), // [i]
         .core_hs                  ( core_hs                  ), // [i]
         .core_vs                  ( core_vs                  ), // [i]
         .core_hb                  ( core_hb                  ), // [i]
@@ -783,6 +779,125 @@ module core_top
         .ioctl_data               ( ioctl_data               )  // [o]
     );
 
+    //!-------------------------------------------------------------------------
+    //! Gamepad/Analog Stick
+    //!-------------------------------------------------------------------------
+    // Player 1
+    // - DPAD
+    wire       p1_up,     p1_down,   p1_left,   p1_right;
+    wire       p1_btn_y,  p1_btn_x,  p1_btn_b,  p1_btn_a;
+    wire       p1_btn_l1, p1_btn_l2, p1_btn_l3;
+    wire       p1_btn_r1, p1_btn_r2, p1_btn_r3;
+    wire       p1_select, p1_start;
+    // - Analog
+    wire       j1_up,     j1_down,   j1_left,   j1_right;
+    wire [7:0] j1_lx,     j1_ly,     j1_rx,     j1_ry;
+
+    // Player 2
+    // - DPAD
+    wire       p2_up,     p2_down,   p2_left,   p2_right;
+    wire       p2_btn_y,  p2_btn_x,  p2_btn_b,  p2_btn_a;
+    wire       p2_btn_l1, p2_btn_l2, p2_btn_l3;
+    wire       p2_btn_r1, p2_btn_r2, p2_btn_r3;
+    wire       p2_select, p2_start;
+    // - Analog
+    wire       j2_up,     j2_down,   j2_left,   j2_right;
+    wire [7:0] j2_lx,     j2_ly,     j2_rx,     j2_ry;
+
+    // Player 3
+    // - DPAD
+    wire       p3_up,     p3_down,   p3_left,   p3_right;
+    wire       p3_btn_y,  p3_btn_x,  p3_btn_b,  p3_btn_a;
+    wire       p3_btn_l1, p3_btn_l2, p3_btn_l3;
+    wire       p3_btn_r1, p3_btn_r2, p3_btn_r3;
+    wire       p3_select, p3_start;
+    // - Analog
+    wire       j3_up,     j3_down,   j3_left,   j3_right;
+    wire [7:0] j3_lx,     j3_ly,     j3_rx,     j3_ry;
+
+    // Player 4
+    // - DPAD
+    wire       p4_up,     p4_down,   p4_left,   p4_right;
+    wire       p4_btn_y,  p4_btn_x,  p4_btn_b,  p4_btn_a;
+    wire       p4_btn_l1, p4_btn_l2, p4_btn_l3;
+    wire       p4_btn_r1, p4_btn_r2, p4_btn_r3;
+    wire       p4_select, p4_start;
+    // - Analog
+    wire       j4_up,     j4_down,   j4_left,   j4_right;
+    wire [7:0] j4_lx,     j4_ly,     j4_rx,     j4_ry;
+
+    // Single Player or Alternate 2 Players for Arcade
+    wire m_start1, m_start2;
+    wire m_coin1,  m_coin2, m_coin;
+    wire m_up,     m_down,  m_left, m_right;
+    wire m_btn1,   m_btn2,  m_btn3, m_btn4;
+    wire m_btn5,   m_btn6,  m_btn7, m_btn8;
+
+    gamepad #(.JOY_PADS(JOY_PADS),.JOY_ALT(JOY_ALT)) u_pocket_gamepad
+    (
+        .clk_sys   ( clk_sys   ),
+        // Pocket PAD Interface
+        .cont1_key ( cont1_key ), .cont1_joy ( cont1_joy ), // [i]
+        .cont2_key ( cont2_key ), .cont2_joy ( cont2_joy ), // [i]
+        .cont3_key ( cont3_key ), .cont3_joy ( cont3_joy ), // [i]
+        .cont4_key ( cont4_key ), .cont4_joy ( cont4_joy ), // [i]
+        // Input DIP Switches
+        .inp_sw0   ( inp_sw0   ), .inp_sw1   ( inp_sw1   ), // [i]
+        .inp_sw2   ( inp_sw2   ), .inp_sw3   ( inp_sw3   ), // [i]
+        // Player 1
+        .p1_up     ( p1_up     ), .p1_down   ( p1_down   ), // [o]
+        .p1_left   ( p1_left   ), .p1_right  ( p1_right  ), // [o]
+        .p1_y      ( p1_btn_y  ), .p1_x      ( p1_btn_x  ), // [o]
+        .p1_b      ( p1_btn_b  ), .p1_a      ( p1_btn_a  ), // [o]
+        .p1_l1     ( p1_btn_l1 ), .p1_r1     ( p1_btn_r1 ), // [o]
+        .p1_l2     ( p1_btn_l2 ), .p1_r2     ( p1_btn_r2 ), // [o]
+        .p1_l3     ( p1_btn_l3 ), .p1_r3     ( p1_btn_r3 ), // [o]
+        .p1_se     ( p1_select ), .p1_st     ( p1_start  ), // [o]
+        .j1_up     ( j1_up     ), .j1_down   ( j1_down   ), // [o]
+        .j1_left   ( j1_left   ), .j1_right  ( j1_right  ), // [o]
+        .j1_lx     ( j1_lx     ), .j1_ly     ( j1_ly     ), // [o]
+        .j1_rx     ( j1_rx     ), .j1_ry     ( j1_ry     ), // [o]
+        // Player 2
+        .p2_up     ( p2_up     ), .p2_down   ( p2_down   ), // [o]
+        .p2_left   ( p2_left   ), .p2_right  ( p2_right  ), // [o]
+        .p2_y      ( p2_btn_y  ), .p2_x      ( p2_btn_x  ), // [o]
+        .p2_b      ( p2_btn_b  ), .p2_a      ( p2_btn_a  ), // [o]
+        .p2_l1     ( p2_btn_l1 ), .p2_r1     ( p2_btn_r1 ), // [o]
+        .p2_l2     ( p2_btn_l2 ), .p2_r2     ( p2_btn_r2 ), // [o]
+        .p2_l3     ( p2_btn_l3 ), .p2_r3     ( p2_btn_r3 ), // [o]
+        .p2_se     ( p2_select ), .p2_st     ( p2_start  ), // [o]
+        .j2_up     ( j2_up     ), .j2_down   ( j2_down   ), // [o]
+        .j2_left   ( j2_left   ), .j2_right  ( j2_right  ), // [o]
+        .j2_lx     ( j2_lx     ), .j2_ly     ( j2_ly     ), // [o]
+        .j2_rx     ( j2_rx     ), .j2_ry     ( j2_ry     ), // [o]
+        // Player 3
+        .p3_up     ( p3_up     ), .p3_down   ( p3_down   ), // [o]
+        .p3_left   ( p3_left   ), .p3_right  ( p3_right  ), // [o]
+        .p3_y      ( p3_btn_y  ), .p3_x      ( p3_btn_x  ), // [o]
+        .p3_b      ( p3_btn_b  ), .p3_a      ( p3_btn_a  ), // [o]
+        .p3_l1     ( p3_btn_l1 ), .p3_r1     ( p3_btn_r1 ), // [o]
+        .p3_l2     ( p3_btn_l2 ), .p3_r2     ( p3_btn_r2 ), // [o]
+        .p3_l3     ( p3_btn_l3 ), .p3_r3     ( p3_btn_r3 ), // [o]
+        .p3_se     ( p3_select ), .p3_st     ( p3_start  ), // [o]
+        .j3_up     ( j3_up     ), .j3_down   ( j3_down   ), // [o]
+        .j3_left   ( j3_left   ), .j3_right  ( j3_right  ), // [o]
+        .j3_lx     ( j3_lx     ), .j3_ly     ( j3_ly     ), // [o]
+        .j3_rx     ( j3_rx     ), .j3_ry     ( j3_ry     ), // [o]
+        // Player 4
+        .p4_up     ( p4_up     ), .p4_down   ( p4_down   ), // [o]
+        .p4_left   ( p4_left   ), .p4_right  ( p4_right  ), // [o]
+        .p4_y      ( p4_btn_y  ), .p4_x      ( p4_btn_x  ), // [o]
+        .p4_b      ( p4_btn_b  ), .p4_a      ( p4_btn_a  ), // [o]
+        .p4_l1     ( p4_btn_l1 ), .p4_r1     ( p4_btn_r1 ), // [o]
+        .p4_l2     ( p4_btn_l2 ), .p4_r2     ( p4_btn_r2 ), // [o]
+        .p4_l3     ( p4_btn_l3 ), .p4_r3     ( p4_btn_r3 ), // [o]
+        .p4_se     ( p4_select ), .p4_st     ( p4_start  ), // [o]
+        .j4_up     ( j4_up     ), .j4_down   ( j4_down   ), // [o]
+        .j4_left   ( j4_left   ), .j4_right  ( j4_right  ), // [o]
+        .j4_lx     ( j4_lx     ), .j4_ly     ( j4_ly     ), // [o]
+        .j4_rx     ( j4_rx     ), .j4_ry     ( j4_ry     )  // [o]
+    );
+
     //! ------------------------------------------------------------------------
     //! Clocks
     //! ------------------------------------------------------------------------
@@ -825,31 +940,31 @@ module core_top
         .dsw_2            ( dip_sw1           ), // [i]
         .dsw_3            ( dip_sw2           ), // [i]
 
-        .p1_coin          ( p1_controls[14]), // [i]
-        .p1_start         ( p1_controls[15]), // [i]
-        .p1_up            ( p1_controls[0]), // [i]
-        .p1_left          ( p1_controls[2]), // [i]
-        .p1_down          ( p1_controls[1]), // [i]
-        .p1_right         ( p1_controls[3]), // [i]
-        .p1_btn_y         ( p1_controls[7]), // [i]
-        .p1_btn_x         ( p1_controls[6]), // [i]
-        .p1_btn_b         ( p1_controls[5]), // [i]
-        .p1_btn_a         ( p1_controls[4]), // [i]
-        .p1_btn_l         ( p1_controls[8]), // [i]
-        .p1_btn_r         ( p1_controls[9]), // [i]
+        .p1_coin          ( p1_select         ), // [i]
+        .p1_start         ( p1_start          ), // [i]
+        .p1_up            ( p1_up             ), // [i]
+        .p1_left          ( p1_left           ), // [i]
+        .p1_down          ( p1_down           ), // [i]
+        .p1_right         ( p1_right          ), // [i]
+        .p1_btn_y         ( p1_btn_y          ), // [i]
+        .p1_btn_x         ( p1_btn_x          ), // [i]
+        .p1_btn_b         ( p1_btn_b          ), // [i]
+        .p1_btn_a         ( p1_btn_a          ), // [i]
+        .p1_btn_l         ( p1_btn_l1         ), // [i]
+        .p1_btn_r         ( p1_btn_r1         ), // [i]
 
-        .p2_coin          ( p2_controls[14]), // [i]
-        .p2_start         ( p2_controls[15]), // [i]
-        .p2_up            ( p2_controls[0]), // [i]
-        .p2_left          ( p2_controls[2]), // [i]
-        .p2_down          ( p2_controls[1]), // [i]
-        .p2_right         ( p2_controls[3]), // [i]
-        .p2_btn_y         ( p2_controls[7]), // [i]
-        .p2_btn_x         ( p2_controls[6]), // [i]
-        .p2_btn_b         ( p2_controls[5]), // [i]
-        .p2_btn_a         ( p2_controls[4]), // [i]
-        .p2_btn_l         ( p2_controls[8]), // [i]
-        .p2_btn_r         ( p2_controls[9]), // [i]
+        .p2_coin          ( p2_select         ), // [i]
+        .p2_start         ( p2_start          ), // [i]
+        .p2_up            ( p2_up             ), // [i]
+        .p2_left          ( p2_left           ), // [i]
+        .p2_down          ( p2_down           ), // [i]
+        .p2_right         ( p2_right          ), // [i]
+        .p2_btn_y         ( p2_btn_y          ), // [i]
+        .p2_btn_x         ( p2_btn_x          ), // [i]
+        .p2_btn_b         ( p2_btn_b          ), // [i]
+        .p2_btn_a         ( p2_btn_a          ), // [i]
+        .p2_btn_l         ( p2_btn_l1         ), // [i]
+        .p2_btn_r         ( p2_btn_r1         ), // [i]
 
         .audio_l          ( core_snd_l        ), // [o]
         .audio_r          ( core_snd_r        ), // [o]
@@ -861,7 +976,6 @@ module core_top
         .video_vs         ( core_vs           ), // [o]
         .video_hb         ( core_hb           ), // [o]
         .video_vb         ( core_vb           ), // [o]
-        .video_ce         ( core_ce           ), // [o]
 
         .video_preset     ( video_preset      ), // [o]
 
@@ -883,252 +997,4 @@ module core_top
         .sdram_cas_n      ( dram_cas_n        )  // [o]
     );
 
-    /*[ANALOGIZER_HOOK_BEGIN]*/
-    //reg analogizer_ena;
-    wire [3:0] analogizer_video_type;
-    wire [4:0] snac_game_cont_type;
-    wire [3:0] snac_cont_assignment;
-    wire       pocket_blank_screen;
-
-    //create aditional switch to blank Pocket screen.
-    wire [23:0] video_rgb_irem72;
-    assign video_rgb_irem72 = (pocket_blank_screen) ? 24'h000000: {core_r,core_g,core_b};
-
-    //switch between Analogizer SNAC and Pocket Controls for P1-P4 (P3,P4 when uses PCEngine Multitap)
-    wire [15:0] p1_btn, p2_btn, p3_btn, p4_btn;
-    wire [31:0] p1_joy, p2_joy;
-    reg [31:0] p1_joystick, p2_joystick;
-    reg  [15:0] p1_controls, p2_controls, p3_controls, p4_controls;
-
-    wire snac_is_analog = (snac_game_cont_type == 5'h12) || (snac_game_cont_type == 5'h13);
-
-    //! Player 1 ---------------------------------------------------------------------------
-    reg p1_up, p1_down, p1_left, p1_right;
-    wire p1_up_analog, p1_down_analog, p1_left_analog, p1_right_analog;
-    //using left analog joypad
-    assign p1_up_analog    = (p1_joy[15:8] < 8'h40) ? 1'b1 : 1'b0; //analog range UP 0x00 Idle 0x7F DOWN 0xFF, DEADZONE +- 0x15
-    assign p1_down_analog  = (p1_joy[15:8] > 8'hC0) ? 1'b1 : 1'b0; 
-    assign p1_left_analog  = (p1_joy[7:0]  < 8'h40) ? 1'b1 : 1'b0; //analog range LEFT 0x00 Idle 0x7F RIGHT 0xFF, DEADZONE +- 0x15
-    assign p1_right_analog = (p1_joy[7:0]  > 8'hC0) ? 1'b1 : 1'b0;
-
-    always @(posedge clk_74a) begin
-        p1_up    <= (snac_is_analog) ? p1_up_analog    : p1_btn[0];
-        p1_down  <= (snac_is_analog) ? p1_down_analog  : p1_btn[1];
-        p1_left  <= (snac_is_analog) ? p1_left_analog  : p1_btn[2];
-        p1_right <= (snac_is_analog) ? p1_right_analog : p1_btn[3];
-    end
-    //! Player 2 ---------------------------------------------------------------------------
-    reg p2_up, p2_down, p2_left, p2_right;
-    wire p2_up_analog, p2_down_analog, p2_left_analog, p2_right_analog;
-    //using left analog joypad
-    assign p2_up_analog    = (p2_joy[15:8] < 8'h40) ? 1'b1 : 1'b0; //analog range UP 0x00 Idle 0x7F DOWN 0xFF, DEADZONE +- 0x15
-    assign p2_down_analog  = (p2_joy[15:8] > 8'hC0) ? 1'b1 : 1'b0; 
-    assign p2_left_analog  = (p2_joy[7:0]  < 8'h40) ? 1'b1 : 1'b0; //analog range LEFT 0x00 Idle 0x7F RIGHT 0xFF, DEADZONE +- 0x15
-    assign p2_right_analog = (p2_joy[7:0]  > 8'hC0) ? 1'b1 : 1'b0;
-
-    always @(posedge clk_74a) begin
-        p2_up    <= (snac_is_analog) ? p2_up_analog    : p2_btn[0];
-        p2_down  <= (snac_is_analog) ? p2_down_analog  : p2_btn[1];
-        p2_left  <= (snac_is_analog) ? p2_left_analog  : p2_btn[2];
-        p2_right <= (snac_is_analog) ? p2_right_analog : p2_btn[3];
-    end
-    always @(posedge clk_74a) begin
-        reg [31:0] p1_pocket_btn, p1_pocket_joy;
-        reg [31:0] p2_pocket_btn, p2_pocket_joy;
-
-        if(snac_game_cont_type == 5'h0) begin //SNAC is disabled
-            p1_controls <= cont1_key;
-            p2_controls <= cont2_key;
-        end
-        else begin
-        case(snac_cont_assignment[1:0])
-        2'h0:    begin  //SNAC P1 -> Pocket P1
-            p1_controls <= {p1_btn[15:4],p1_right,p1_left,p1_down,p1_up};
-            p2_controls <= cont2_key;
-            end
-        2'h1: begin  //SNAC P1 -> Pocket P2
-            p1_controls <= cont1_key;
-            p2_controls <= p1_btn;
-            end
-        2'h2: begin //SNAC P1 -> Pocket P1, SNAC P2 -> Pocket P2
-            p1_controls <= {p1_btn[15:4],p1_right,p1_left,p1_down,p1_up};
-            p2_controls <= {p2_btn[15:4],p2_right,p2_left,p2_down,p2_up};
-            end
-        2'h3: begin //SNAC P1 -> Pocket P2, SNAC P2 -> Pocket P1
-            p1_controls <= {p2_btn[15:4],p2_right,p2_left,p2_down,p2_up};
-            p2_controls <= {p1_btn[15:4],p1_right,p1_left,p1_down,p1_up};
-            end
-        default: begin 
-            p1_controls <= cont1_key;
-            p2_controls <= cont2_key;
-            end
-        endcase
-        end
-    end
-
-    wire [15:0] p1_btn_CK, p2_btn_CK;
-    wire [31:0] p1_joy_CK, p2_joy_CK;
-    synch_3 #(
-    .WIDTH(16)
-    ) p1b_s (
-        p1_btn_CK,
-        p1_btn,
-        clk_74a
-    );
-
-    synch_3 #(
-        .WIDTH(16)
-    ) p2b_s (
-        p2_btn_CK,
-        p2_btn,
-        clk_74a
-    );
-
-    synch_3 #(
-    .WIDTH(32)
-    ) p3b_s (
-        p1_joy_CK,
-        p1_joy,
-        clk_74a
-    );
-        
-    synch_3 #(
-        .WIDTH(32)
-    ) p4b_s (
-        p2_joy_CK,
-        p2_joy,
-        clk_74a
-    );
-
-
-    // Video Y/C Encoder settings
-    // Follows the Mike Simone Y/C encoder settings:
-    // https://github.com/MikeS11/MiSTerFPGA_YC_Encoder
-    // SET PAL and NTSC TIMING and pass through status bits. ** YC must be enabled in the qsf file **
-    wire [39:0] CHROMA_PHASE_INC;
-    wire PALFLAG;
-
-    parameter NTSC_REF = 3.579545;   
-    parameter PAL_REF = 4.43361875;
-
-    // Parameters to be modifed
-    parameter CLK_VIDEO_NTSC = 32.0; // Must be filled E.g XX.X Hz - CLK_VIDEO
-    parameter CLK_VIDEO_PAL  = 32.0; // Must be filled E.g XX.X Hz - CLK_VIDEO
-
-    //PAL CLOCK FREQUENCY SHOULD BE 42.56274
-    localparam [39:0] NTSC_PHASE_INC = 40'd122992229676; // ((NTSC_REF * 2^40) / CLK_VIDEO_NTSC)
-    localparam [39:0] PAL_PHASE_INC  = 40'd152337980273; // ((PAL_REF * 2^40) / CLK_VIDEO_PAL)
-
-    assign CHROMA_PHASE_INC = PALFLAG ? PAL_PHASE_INC : NTSC_PHASE_INC; 
-    assign PALFLAG = (analogizer_video_type == 4'h4); 
-
-
-    // H/V offset
-    logic [4:0]	hoffset = 5'h10; //status[20:17];
-    logic [4:0]	voffset = 5'h10; //status[24:21];
-
-    always_ff @(posedge clk_sys) begin 
-//        logic start_r, up_r, down_r, left_r, right_r;
-//        start_r <= p1_controls[15];
-//        up_r    <= p1_controls[0];
-//        down_r  <= p1_controls[1];
-//        left_r  <= p1_controls[2];
-//        right_r <= p1_controls[3]; 
-
-        if (p1_controls[15] && p1_controls[0] && (voffset < 5'h1f)) begin
-            voffset <= voffset + 5'd1;
-        end
-        else if (p1_controls[15] && p1_controls[1] && (voffset > 5'h0)) begin
-            voffset <= voffset - 5'd1;
-        end
-
-        if (p1_controls[15] && p1_controls[3] && (hoffset < 5'h1f)) begin
-            hoffset <= hoffset + 5'd1;
-        end
-        else if (p1_controls[15] && p1_controls[2] && (hoffset > 5'h0)) begin
-            hoffset <= hoffset - 5'd1;
-        end
-        
-    end
-
-    wire HSync,VSync;
-    jtframe_resync jtframe_resync
-    (
-        .clk(clk_sys),
-        .pxl_cen(core_ce),
-        .hs_in(core_hs),
-        .vs_in(core_vs),
-        .LVBL(~core_vb),
-        .LHBL(~core_hb),
-        .hoffset(hoffset),
-        .voffset(voffset),
-        .hs_out(HSync),
-        .vs_out(VSync)
-    );
-
-    //32_000_000
-    wire [31:0] analogizer_bridge_rd_data;
-    openFPGA_Pocket_Analogizer #(.MASTER_CLK_FREQ(32_000_000), .LINE_LENGTH(512), .ADDRESS_ANALOGIZER_CONFIG(ADDRESS_ANALOGIZER_CONFIG)) analogizer (
-        .clk_74a(clk_74a),
-        .i_clk(clk_sys),
-        .i_rst(reset_sw), //i_rst is active high
-        .i_ena(1'b1),
-
-        //Video interface
-        .video_clk(clk_sys),
-        .R(core_r),
-        .G(core_g ),
-        .B(core_b),
-        .Hblank(core_hb),
-        .Vblank(core_vb),
-        .Hsync(HSync), //composite SYNC on HSync.
-        .Vsync(VSync),
-
-        //openFPGA Bridge interface
-        .bridge_endian_little(bridge_endian_little),
-        .bridge_addr(bridge_addr),
-        .bridge_rd(bridge_rd),
-        .analogizer_bridge_rd_data(analogizer_bridge_rd_data),
-        .bridge_wr(bridge_wr),
-        .bridge_wr_data(bridge_wr_data),
-
-        //Analogizer settings
-        .snac_game_cont_type_out(snac_game_cont_type),
-        .snac_cont_assignment_out(snac_cont_assignment),
-        .analogizer_video_type_out(analogizer_video_type),
-        .SC_fx_out(),
-        .pocket_blank_screen_out(pocket_blank_screen),
-        .analogizer_osd_out(),
-
-        //Video Y/C Encoder interface
-        .CHROMA_PHASE_INC(CHROMA_PHASE_INC),
-        .PALFLAG(PALFLAG),
-        //Video SVGA Scandoubler interface
-        .ce_pix(core_ce),
-        .scandoubler(1'b1), //logic for disable/enable the scandoubler
-        //SNAC interface
-        .p1_btn_state(p1_btn_CK),
-        .p1_joy_state(p1_joy_CK),
-        .p2_btn_state(p2_btn_CK),  
-        .p2_joy_state(p2_joy_CK),
-        .p3_btn_state(),
-        .p4_btn_state(),      
-        //Pocket Analogizer IO interface to the Pocket cartridge port
-        .cart_tran_bank2(cart_tran_bank2),
-        .cart_tran_bank2_dir(cart_tran_bank2_dir),
-        .cart_tran_bank3(cart_tran_bank3),
-        .cart_tran_bank3_dir(cart_tran_bank3_dir),
-        .cart_tran_bank1(cart_tran_bank1),
-        .cart_tran_bank1_dir(cart_tran_bank1_dir),
-        .cart_tran_bank0(cart_tran_bank0),
-        .cart_tran_bank0_dir(cart_tran_bank0_dir),
-        .cart_tran_pin30(cart_tran_pin30),
-        .cart_tran_pin30_dir(cart_tran_pin30_dir),
-        .cart_pin30_pwroff_reset(cart_pin30_pwroff_reset),
-        .cart_tran_pin31(cart_tran_pin31),
-        .cart_tran_pin31_dir(cart_tran_pin31_dir),
-        //debug
-        .o_stb()
-    );
-    /*[ANALOGIZER_HOOK_END]*/
 endmodule

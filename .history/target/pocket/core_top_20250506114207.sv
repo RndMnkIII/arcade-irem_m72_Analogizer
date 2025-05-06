@@ -727,9 +727,9 @@ module core_top
         .field                    ( field                    ), // [i]
         .interlaced               ( interlaced               ), // [i]
         // Input Video from Core
-        .core_r                   ( video_rgb_irem72[23:16]  ), // [i]
-        .core_g                   ( video_rgb_irem72[15:8]   ), // [i]
-        .core_b                   ( video_rgb_irem72[7:0]    ), // [i]
+        .core_r                   ( video_rgb[23:16]         ), // [i]
+        .core_g                   ( video_rgb[15:8]          ), // [i]
+        .core_b                   ( video_rgb[7:0]           ), // [i]
         .core_hs                  ( core_hs                  ), // [i]
         .core_vs                  ( core_vs                  ), // [i]
         .core_hb                  ( core_hb                  ), // [i]
@@ -825,6 +825,31 @@ module core_top
         .dsw_2            ( dip_sw1           ), // [i]
         .dsw_3            ( dip_sw2           ), // [i]
 
+        // .p1_coin          ( p1_select         ), // [i]
+        // .p1_start         ( p1_start          ), // [i]
+        // .p1_up            ( p1_up             ), // [i]
+        // .p1_left          ( p1_left           ), // [i]
+        // .p1_down          ( p1_down           ), // [i]
+        // .p1_right         ( p1_right          ), // [i]
+        // .p1_btn_y         ( p1_btn_y          ), // [i]
+        // .p1_btn_x         ( p1_btn_x          ), // [i]
+        // .p1_btn_b         ( p1_btn_b          ), // [i]
+        // .p1_btn_a         ( p1_btn_a          ), // [i]
+        // .p1_btn_l         ( p1_btn_l1         ), // [i]
+        // .p1_btn_r         ( p1_btn_r1         ), // [i]
+
+        // .p2_coin          ( p2_select         ), // [i]
+        // .p2_start         ( p2_start          ), // [i]
+        // .p2_up            ( p2_up             ), // [i]
+        // .p2_left          ( p2_left           ), // [i]
+        // .p2_down          ( p2_down           ), // [i]
+        // .p2_right         ( p2_right          ), // [i]
+        // .p2_btn_y         ( p2_btn_y          ), // [i]
+        // .p2_btn_x         ( p2_btn_x          ), // [i]
+        // .p2_btn_b         ( p2_btn_b          ), // [i]
+        // .p2_btn_a         ( p2_btn_a          ), // [i]
+        // .p2_btn_l         ( p2_btn_l1         ), // [i]
+        // .p2_btn_r         ( p2_btn_r1         ), // [i]
         .p1_coin          ( p1_controls[14]), // [i]
         .p1_start         ( p1_controls[15]), // [i]
         .p1_up            ( p1_controls[0]), // [i]
@@ -891,8 +916,8 @@ module core_top
     wire       pocket_blank_screen;
 
     //create aditional switch to blank Pocket screen.
-    wire [23:0] video_rgb_irem72;
-    assign video_rgb_irem72 = (pocket_blank_screen) ? 24'h000000: {core_r,core_g,core_b};
+    wire [23:0] video_rgb_tecmo;
+    assign video_rgb = (pocket_blank_screen) ? 24'h000000: {core_r,core_g,core_b};
 
     //switch between Analogizer SNAC and Pocket Controls for P1-P4 (P3,P4 when uses PCEngine Multitap)
     wire [15:0] p1_btn, p2_btn, p3_btn, p4_btn;
@@ -1024,40 +1049,15 @@ module core_top
 
 
     // H/V offset
-    logic [4:0]	hoffset = 5'h10; //status[20:17];
-    logic [4:0]	voffset = 5'h10; //status[24:21];
-
-    always_ff @(posedge clk_sys) begin 
-//        logic start_r, up_r, down_r, left_r, right_r;
-//        start_r <= p1_controls[15];
-//        up_r    <= p1_controls[0];
-//        down_r  <= p1_controls[1];
-//        left_r  <= p1_controls[2];
-//        right_r <= p1_controls[3]; 
-
-        if (p1_controls[15] && p1_controls[0] && (voffset < 5'h1f)) begin
-            voffset <= voffset + 5'd1;
-        end
-        else if (p1_controls[15] && p1_controls[1] && (voffset > 5'h0)) begin
-            voffset <= voffset - 5'd1;
-        end
-
-        if (p1_controls[15] && p1_controls[3] && (hoffset < 5'h1f)) begin
-            hoffset <= hoffset + 5'd1;
-        end
-        else if (p1_controls[15] && p1_controls[2] && (hoffset > 5'h0)) begin
-            hoffset <= hoffset - 5'd1;
-        end
-        
-    end
-
-    wire HSync,VSync;
+    wire [3:0]	hoffset = status[20:17];
+    wire [3:0]	voffset = status[24:21];
+    wire Hsync,Vsync;
     jtframe_resync jtframe_resync
     (
         .clk(clk_sys),
         .pxl_cen(core_ce),
-        .hs_in(core_hs),
-        .vs_in(core_vs),
+        .hs_in(hs_core),
+        .vs_in(vs_core),
         .LVBL(~core_vb),
         .LHBL(~core_hb),
         .hoffset(hoffset),
@@ -1075,7 +1075,7 @@ module core_top
         .i_ena(1'b1),
 
         //Video interface
-        .video_clk(clk_sys),
+        .video_clk(sys_clock),
         .R(core_r),
         .G(core_g ),
         .B(core_b),
