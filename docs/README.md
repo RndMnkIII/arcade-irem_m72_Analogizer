@@ -1,7 +1,7 @@
 ![Irem M92](./irem_m72-logo.png)
 
 * [Analogizer Release 0.1.2] Initial relase with Analogizer support.
-* [Analogizer Release 0.1.4] Added H/Voffset control for Analogizer video output usind an OSD.
+* [Analogizer Release 0.1.4] Added H/Voffset control for Analogizer video output using an OSD.
 
 [![Active Development](https://img.shields.io/badge/Maintenance%20Level-Actively%20Developed-brightgreen.svg)](#status-of-features)
 [![Build](https://github.com/opengateware/arcade-irem_m72/actions/workflows/build.yml/badge.svg)](https://github.com/opengateware/arcade-irem_m72/actions/workflows/build.yml)
