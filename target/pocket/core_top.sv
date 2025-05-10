@@ -890,8 +890,11 @@ module core_top
     wire [3:0] snac_cont_assignment;
     wire       pocket_blank_screen;
 
+    wire analogizer_ena = analogizer_sw[16];
+
     //create aditional switch to blank Pocket screen.
     wire [23:0] video_rgb_irem72;
+    //assign video_rgb_irem72 = (pocket_blank_screen && !analogizer_ena) ? 24'h000000: {core_r,core_g,core_b};
     assign video_rgb_irem72 = (pocket_blank_screen) ? 24'h000000: {core_r,core_g,core_b};
 
     //switch between Analogizer SNAC and Pocket Controls for P1-P4 (P3,P4 when uses PCEngine Multitap)
@@ -936,7 +939,7 @@ module core_top
         reg [31:0] p1_pocket_btn, p1_pocket_joy;
         reg [31:0] p2_pocket_btn, p2_pocket_joy;
 
-        if(snac_game_cont_type == 5'h0) begin //SNAC is disabled
+        if((snac_game_cont_type == 5'h0) ) begin //SNAC is disabled
             p1_controls <= cont1_key;
             p2_controls <= cont2_key;
         end
@@ -1024,31 +1027,33 @@ module core_top
 
 
     // H/V offset
-    logic [4:0]	hoffset = 5'h10; //status[20:17];
-    logic [4:0]	voffset = 5'h10; //status[24:21];
+    logic [4:0]	hoffset = 4'h0; //status[20:17];
+    logic [4:0]	voffset = 4'h0; //status[24:21];
+    // logic [5:0]	hoffset = 6'h0; //status[20:17];
+    // wire [4:0]	voffset = analogizer_sw[4:0]; //status[24:21];
+    logic start_r, up_r, down_r, left_r, right_r;
 
     always_ff @(posedge clk_sys) begin 
-//        logic start_r, up_r, down_r, left_r, right_r;
-//        start_r <= p1_controls[15];
-//        up_r    <= p1_controls[0];
-//        down_r  <= p1_controls[1];
-//        left_r  <= p1_controls[2];
-//        right_r <= p1_controls[3]; 
 
-        if (p1_controls[15] && p1_controls[0] && (voffset < 5'h1f)) begin
-            voffset <= voffset + 5'd1;
-        end
-        else if (p1_controls[15] && p1_controls[1] && (voffset > 5'h0)) begin
-            voffset <= voffset - 5'd1;
-        end
+       start_r <= p1_controls[15];
+       up_r    <= p1_controls[0];
+       down_r  <= p1_controls[1];
+       left_r  <= p1_controls[2];
+       right_r <= p1_controls[3]; 
+        // if (p1_controls[15] && !down_r && p1_controls[1] && (voffset < 5'h1f)) begin
+        //     voffset <= voffset + 1;
+        // end
+        // else if (p1_controls[15] && !up_r && p1_controls[0] && (voffset > 5'h0)) begin
+        //     voffset <= voffset - 1;
+        // end
 
-        if (p1_controls[15] && p1_controls[3] && (hoffset < 5'h1f)) begin
-            hoffset <= hoffset + 5'd1;
-        end
-        else if (p1_controls[15] && p1_controls[2] && (hoffset > 5'h0)) begin
-            hoffset <= hoffset - 5'd1;
-        end
-        
+        // if (p1_controls[15] && !right_r && p1_controls[3] && (hoffset < 6'h3f)) begin
+        //     hoffset <= hoffset + 1;
+        // end
+        // else if (p1_controls[15] && !left_r && p1_controls[2] && (hoffset > 6'h0)) begin
+        //     hoffset <= hoffset - 1;
+        // end
+
     end
 
     wire HSync,VSync;
@@ -1060,10 +1065,62 @@ module core_top
         .vs_in(core_vs),
         .LVBL(~core_vb),
         .LHBL(~core_hb),
-        .hoffset(hoffset),
-        .voffset(voffset),
+        .hoffset(hoffset), //5bits signed
+        .voffset(voffset), //5bits signed
         .hs_out(HSync),
         .vs_out(VSync)
+    );
+
+    //Debug OSD
+    wire [7:0] RGB_out_R, RGB_out_G, RGB_out_B;
+    wire HS_out, VS_out, HB_out, VB_out;
+    // osd_overlay_with_pos OSDdbg (
+    //     .clk(clk_sys),
+    //     .pixel_ce(core_ce),
+    //     .debug_value({3'b0,voffset}),
+    //     .RGB_in_R(core_r),
+    //     .RGB_in_G(core_g),
+    //     .RGB_in_B(core_b),
+    //     .HS(HSync),
+    //     .VS(VSync),
+    //     .HBLANK(core_hb),
+    //     .VBLANK(core_vb),
+    //     //output
+    //     .RGB_out_R(RGB_out_R),
+    //     .RGB_out_G(RGB_out_G),
+    //     .RGB_out_B(RGB_out_B),
+    //     .HS_out(HS_out),
+    //     .VS_out(VS_out),
+    //     .VB_out(VB_out), 
+    //     .HB_out(HB_out)
+    // );
+    osd_top #(
+    .CLK_HZ(32_000_000),
+    .DURATION_SEC(3)
+    ) osd_debug_inst (
+        .clk(clk_sys),
+        .reset(reset_sw),
+        .pixel_ce(core_ce),
+        .R_in(core_r),
+        .G_in(core_g),
+        .B_in(core_b),
+        .hsync_in(HSync),
+        .vsync_in(VSync),
+        .hblank(core_hb),
+        .vblank(core_vb),
+        .key_right(p1_controls[15] && !left_r && p1_controls[2]),
+        .key_left(p1_controls[15] && !right_r && p1_controls[3] ),
+        .key_down(p1_controls[15] && !up_r && p1_controls[0]),
+        .key_up(p1_controls[15] && !down_r && p1_controls[1]),
+        .R_out(RGB_out_R),
+        .G_out(RGB_out_G),
+        .B_out(RGB_out_B),
+        .hsync_out(HS_out),
+        .vsync_out(VS_out),
+        .hblank_out(HB_out),
+        .vblank_out(VB_out),
+        .h_offset_out(hoffset),
+        .v_offset_out(voffset)
     );
 
     //32_000_000
@@ -1072,17 +1129,18 @@ module core_top
         .clk_74a(clk_74a),
         .i_clk(clk_sys),
         .i_rst(reset_sw), //i_rst is active high
+        //.i_ena(analogizer_ena),
         .i_ena(1'b1),
 
         //Video interface
         .video_clk(clk_sys),
-        .R(core_r),
-        .G(core_g ),
-        .B(core_b),
-        .Hblank(core_hb),
-        .Vblank(core_vb),
-        .Hsync(HSync), //composite SYNC on HSync.
-        .Vsync(VSync),
+        .R(RGB_out_R),
+        .G(RGB_out_G),
+        .B(RGB_out_B),
+        .Hblank(HB_out),
+        .Vblank(VB_out),
+        .Hsync(HS_out), //composite SYNC on HSync.
+        .Vsync(VS_out),
 
         //openFPGA Bridge interface
         .bridge_endian_little(bridge_endian_little),
