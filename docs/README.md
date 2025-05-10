@@ -13,10 +13,10 @@
 [![Twitter Follow](https://img.shields.io/twitter/follow/marcusjordan?style=social)](https://twitter.com/marcusjordan)
 
 # Irem M72 Compatible Gateware IP Core (Analogizer Release):
-This Implementation of a compatible Irem M72 arcade hardware in HDL is the work of [Martin Donlon].
-
 Adapted to Analogizer by [@RndMnkIII](https://github.com/RndMnkIII) based on **opengateware** core:
 https://github.com/opengateware/arcade-irem_m72 by Marcus Jordan.
+
+This Implementation of a compatible Irem M72 arcade hardware in HDL is the work of [Martin Donlon].
 
 This Analogizer core uses a configuration file to select Analogizer adapter remaining options, not based on the Pocket's menu system. It is necessary to run an external utility [Pupdate >= 4.4.0](https://github.com/mattpannella/pupdate/releases)  or [AnalogizerConfigurator >= 0.4](https://github.com/RndMnkIII/AnalogizerConfigurator/releases) to generate such a file. Once generated, you must copy the `analogizer.bin` file to the `/Assets/analogizer/common` folder on the Pocket SD card. If this folder does not exist, you must create it. Check the refered utility for the relevant options for the Analogizer adapter: SNAC controller, SNAC controller assigments (how to map physical SNAC game controllers to the Pocket openFPGA framework PAD format), Video output and Blank the Pocket Screen (On/Off).
 
