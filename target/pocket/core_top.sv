@@ -1027,32 +1027,18 @@ module core_top
 
 
     // H/V offset
-    logic [4:0]	hoffset = 4'h0; //status[20:17];
-    logic [4:0]	voffset = 4'h0; //status[24:21];
-    // logic [5:0]	hoffset = 6'h0; //status[20:17];
-    // wire [4:0]	voffset = analogizer_sw[4:0]; //status[24:21];
+    // Assigned to START + UP/DOWN/LEFT/RIGHT buttons
+    logic [4:0]	hoffset = 4'h0;
+    logic [4:0]	voffset = 4'h0;
+
     logic start_r, up_r, down_r, left_r, right_r;
 
     always_ff @(posedge clk_sys) begin 
-
        start_r <= p1_controls[15];
        up_r    <= p1_controls[0];
        down_r  <= p1_controls[1];
        left_r  <= p1_controls[2];
        right_r <= p1_controls[3]; 
-        // if (p1_controls[15] && !down_r && p1_controls[1] && (voffset < 5'h1f)) begin
-        //     voffset <= voffset + 1;
-        // end
-        // else if (p1_controls[15] && !up_r && p1_controls[0] && (voffset > 5'h0)) begin
-        //     voffset <= voffset - 1;
-        // end
-
-        // if (p1_controls[15] && !right_r && p1_controls[3] && (hoffset < 6'h3f)) begin
-        //     hoffset <= hoffset + 1;
-        // end
-        // else if (p1_controls[15] && !left_r && p1_controls[2] && (hoffset > 6'h0)) begin
-        //     hoffset <= hoffset - 1;
-        // end
 
     end
 
@@ -1071,29 +1057,10 @@ module core_top
         .vs_out(VSync)
     );
 
-    //Debug OSD
+    //Debug OSD: shows Xoffset and Yoffset values and the detected video resolution for Analogizer
     wire [7:0] RGB_out_R, RGB_out_G, RGB_out_B;
     wire HS_out, VS_out, HB_out, VB_out;
-    // osd_overlay_with_pos OSDdbg (
-    //     .clk(clk_sys),
-    //     .pixel_ce(core_ce),
-    //     .debug_value({3'b0,voffset}),
-    //     .RGB_in_R(core_r),
-    //     .RGB_in_G(core_g),
-    //     .RGB_in_B(core_b),
-    //     .HS(HSync),
-    //     .VS(VSync),
-    //     .HBLANK(core_hb),
-    //     .VBLANK(core_vb),
-    //     //output
-    //     .RGB_out_R(RGB_out_R),
-    //     .RGB_out_G(RGB_out_G),
-    //     .RGB_out_B(RGB_out_B),
-    //     .HS_out(HS_out),
-    //     .VS_out(VS_out),
-    //     .VB_out(VB_out), 
-    //     .HB_out(HB_out)
-    // );
+
     osd_top #(
     .CLK_HZ(32_000_000),
     .DURATION_SEC(3)

@@ -1,5 +1,8 @@
 ![Irem M92](./irem_m72-logo.png)
 
+* [Analogizer Release 0.1.2] Initial relase with Analogizer support.
+* [Analogizer Release 0.1.4] Added H/Voffset control for Analogizer video output usind an OSD.
+
 [![Active Development](https://img.shields.io/badge/Maintenance%20Level-Actively%20Developed-brightgreen.svg)](#status-of-features)
 [![Build](https://github.com/opengateware/arcade-irem_m72/actions/workflows/build.yml/badge.svg)](https://github.com/opengateware/arcade-irem_m72/actions/workflows/build.yml)
 [![release](https://img.shields.io/github/release/opengateware/arcade-irem_m72.svg)](https://github.com/opengateware/arcade-irem_m72/releases)
@@ -18,6 +21,14 @@ https://github.com/opengateware/arcade-irem_m72 by Marcus Jordan.
 This Analogizer core uses a configuration file to select Analogizer adapter remaining options, not based on the Pocket's menu system. It is necessary to run an external utility [Pupdate >= 4.4.0](https://github.com/mattpannella/pupdate/releases)  or [AnalogizerConfigurator >= 0.4](https://github.com/RndMnkIII/AnalogizerConfigurator/releases) to generate such a file. Once generated, you must copy the `analogizer.bin` file to the `/Assets/analogizer/common` folder on the Pocket SD card. If this folder does not exist, you must create it. Check the refered utility for the relevant options for the Analogizer adapter: SNAC controller, SNAC controller assigments (how to map physical SNAC game controllers to the Pocket openFPGA framework PAD format), Video output and Blank the Pocket Screen (On/Off).
 
 This utility allows you to do a few things beyond the usual SNAC controller type and assignment, or video output type and blank of the Pocket screen.
+
+
+### OSD Controls:
+The current release allows to adjust Horizontal/Vertical offset of the image with a range of -15/+15 units using the combination of inputs Start + Up/Down/Left/Right
+* ▶Start + ⬆️: increase Vertical Offset
+* ▶Start + ⬇️: decrease Vertical Offset
+* ▶Start + ⬅️: increase Horizontal Offset
+* ▶Start + ➡️: decrease Horizontal Offset
 
 The core can output RGBS, RGsB, YPbPr, Y/C and SVGA scandoubler (50% scanlines) video signals.
 | Video output | Status | SOG Switch(Only R2,R3 Analogizer) |

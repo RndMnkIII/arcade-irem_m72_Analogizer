@@ -73,7 +73,7 @@ def main(stdscr):
             stdscr.addstr(ROWS + 2, 0, f"Guardado en {archivo}")
             stdscr.refresh()
             stdscr.getch()
-        elif 32 <= key <= 126:  # Caracteres imprimibles
+        elif 32 <= key <= 126 and key not in (27, curses.KEY_F2):  # Excluye ESC y F2
             ram[y * COLS + x] = key
             x = min(x + 1, COLS - 1)
 
