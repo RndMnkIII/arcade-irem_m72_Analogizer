@@ -37,7 +37,12 @@ module osd_top #(
     output logic [2:0]   hblank_out,
     output logic [2:0]   vblank_out,
     output logic signed [4:0] h_offset_out,
-    output logic signed [4:0] v_offset_out
+    output logic signed [4:0] v_offset_out,
+    //Analogizer settings
+    input logic       analogizer_ready,
+    input logic [3:0] analogizer_video_type,
+    input logic [4:0] snac_game_cont_type,
+    input logic [3:0] snac_cont_assignment
 );
 
   // RAM de caracteres compartida
@@ -48,7 +53,7 @@ module osd_top #(
     char_ram_dualport #(
         .ADDR_WIDTH(11),
         .DATA_WIDTH(8),
-        .INIT_FILE("osd_analogizer_ram.mem")
+        .INIT_FILE("osd_analogizer_ram_logo2.mem")
     ) char_mem_inst (
         .clk(clk),
         .we_a(wr_en),
@@ -78,124 +83,217 @@ module osd_top #(
 
     logic signed [4:0] h_offset=$signed(5'sd0), v_offset=$signed(5'sd0);
 
-    typedef enum logic [3:0] {
-        IDLE,
-        UPDATE_H_0, UPDATE_H_1, UPDATE_H_2,
+    typedef enum logic [4:0] {
+        INIT_IDLE, INIT_WAIT, INIT_NEXT, INIT_DONE,
+        IDLE, COPY_OFFSET, UPDATE_H_0, UPDATE_H_1, UPDATE_H_2,
         UPDATE_V_0, UPDATE_V_1, UPDATE_V_2,
         WRITE_WIDTH, WAIT_WIDTH,
         WRITE_HEIGHT, WAIT_HEIGHT
     } state_t;
 
     state_t state;
-    logic key_event;
-    always_comb begin
-        key_event = key_left || key_right || key_up || key_down;
-    end
+    logic key_leftr, key_rightr, key_upr, key_downr;
 
     logic [7:0] ascii_sign, ascii_sign2, ascii_tens, ascii_units;
     logic [4:0] abs_val, abs_val2;
     logic signed [4:0] val;
 
-    localparam int H_POS = 6 * COLS + 10;
-    localparam int V_POS = 7 * COLS + 10;
-    localparam int WIDTH_POS = 8 * COLS + 16;
-    localparam int HEIGHT_POS = 9 * COLS + 16;
+    localparam int H_POS = 12 * COLS + 25;
+    localparam int V_POS = 13 * COLS + 25;
+    localparam int WIDTH_POS = 14 * COLS + 18;
+    localparam int HEIGHT_POS = 15 * COLS + 18;
+    localparam int VIDEO_POS = 16 * COLS + 18;
+    localparam int SNAC_DEV_POS = 17 * COLS + 18;
+    localparam int SNAC_ASG_POS = 18 * COLS + 18;
 
+    localparam int NUM_STRINGS_TO_WRITE = 4;  // modificar según número a mostrar al inicio
 
     logic [10:0] wr_addr_manual;
     logic [7:0]  wr_data_manual;
     logic        wr_en_manual;
+    logic wait_key;
+    logic [2:0] data_info_idx; //one value for case default
     always_ff @(posedge clk) begin
+        key_leftr <= key_left;
+        key_rightr <= key_right;
+        key_upr <= key_up;
+        key_downr <= key_down;
+        
         if (reset) begin
+            data_info_idx <= 0;
             h_offset <= $signed(5'sd0);
             v_offset <= $signed(5'sd0);
-            state <= IDLE;
-            wr_en_manual <= 0;
+            state <= INIT_IDLE;
+            init_done      <= 0;
+            //str_index      <= 0;
+            //str_base_addr  <= 0;
+            //start_str      <= 0;
+            //wr_en_manual   <= 0;
+            wait_key       <= 0;
+            //start_str      <= 0;
         end else begin
             wr_en_manual <= 0;
-            //if (timing_ready) begin
-                if (key_left && (h_offset > -5'sd15)) h_offset <= h_offset + $signed(-5'sd1);
-                else if (key_right && (h_offset < 5'sd15)) h_offset <= h_offset + $signed(5'sd1);
-                if (key_up && (v_offset > -5'sd15)) v_offset <= v_offset + $signed(-5'sd1);
-                else if (key_down && (v_offset < 5'sd15)) v_offset <= v_offset + $signed(5'sd1);
 
-                //State machine para escribir valores en la RAM ya convertidos a formato ASCII
-                case (state)
-                    IDLE: if (key_event) begin
-                        state <= UPDATE_H_0;
+        
+            //State machine para escribir valores en la RAM ya convertidos a formato ASCII
+            case (state)
+                INIT_IDLE: begin
+                    start_str <= 0;
+                    if(analogizer_ready) state <= INIT_WAIT;
+                    else state <= INIT_IDLE;
+                end
+
+                INIT_WAIT: begin
+                    if (!busy_str) begin
+                        if(start_str == 0) begin
+                            case (data_info_idx)
+                                3'd0: begin
+                                    str_index     <= {2'b0,analogizer_video_type} + 6'd0; //see string_to_ram_writer
+                                    str_base_addr <= VIDEO_POS;
+                                    data_info_idx <= data_info_idx + 1;
+                                    start_str     <= 1;
+                                    state    <= INIT_NEXT;
+                                end
+                                3'd1: begin
+                                    str_index     <= {1'b0,snac_game_cont_type} + 6'd16; //see string_to_ram_writer
+                                    str_base_addr <= SNAC_DEV_POS;
+                                    data_info_idx <= data_info_idx + 1;
+                                    start_str     <= 1;
+                                    state    <= INIT_NEXT;
+                                end 
+                                3'd2: begin
+                                    str_index     <= {2'b0,snac_cont_assignment} + 6'd10; //see string_to_ram_writer
+                                    str_base_addr <= SNAC_ASG_POS;
+                                    data_info_idx <= data_info_idx + 1;
+                                    start_str     <= 1;
+                                    state    <= INIT_NEXT;
+                                end 
+                                default: begin
+                                    init_done <= 1;
+                                    state <= INIT_DONE;
+                                end
+                            endcase
+                        end
+                    end
+                    else  begin 
+                        state <= INIT_WAIT;
+                    end
+                end
+                
+
+                INIT_NEXT: begin
+                    start_str <= 0;
+                    state <= INIT_WAIT;
+                end
+
+                INIT_DONE: begin
+                    state <= IDLE;
+                end
+                IDLE: 
+                    if (!wait_key && (key_leftr || key_rightr || key_downr || key_upr)) begin
+                        if (key_leftr && (h_offset > -5'sd15)) h_offset <= h_offset + $signed(-5'sd1);
+                        else if (key_rightr && (h_offset < 5'sd15)) h_offset <= h_offset + $signed(5'sd1);
+                        if (key_upr && (v_offset > -5'sd15)) v_offset <= v_offset + $signed(-5'sd1);
+                        else if (key_downr && (v_offset < 5'sd15)) v_offset <= v_offset + $signed(5'sd1);
+                        state <= COPY_OFFSET;
+                        wait_key <= 1;
+                    end
+                COPY_OFFSET:begin
                         ascii_sign  <= (h_offset < 0) ? 8'h2D : 8'h2B;
                         ascii_sign2 <= (v_offset < 0) ? 8'h2D : 8'h2B;
                         abs_val     <= (h_offset < 0) ? -h_offset : h_offset;
                         abs_val2    <= (v_offset < 0) ? -v_offset : v_offset;
+                        state <= UPDATE_H_0;
+                end
+
+                UPDATE_H_0: begin
+                    wr_addr_manual <= H_POS + 0; wr_data_manual <= ascii_sign; wr_en_manual <= 1;
+                    ascii_tens  <= (abs_val >= 10) ? 8'h31 : 8'h20;
+                    state <= UPDATE_H_1;
+                end
+
+                UPDATE_H_1: begin
+                    wr_addr_manual <= H_POS + 1; wr_data_manual <= ascii_tens; wr_en_manual <= 1;
+                    ascii_units <= 8'h30 + (abs_val % 10);
+                    state <= UPDATE_H_2;
+                end
+
+                UPDATE_H_2: begin
+                    wr_addr_manual <= H_POS + 2; wr_data_manual <= ascii_units; wr_en_manual <= 1;
+                    state <= UPDATE_V_0;
+                end
+
+                UPDATE_V_0: begin
+                    wr_addr_manual <= V_POS + 0; wr_data_manual <= ascii_sign2; wr_en_manual <= 1;
+                    ascii_tens  <= (abs_val2 >= 10) ? 8'h31 : 8'h20;
+                    state <= UPDATE_V_1;
+                end
+
+                UPDATE_V_1: begin
+                    wr_addr_manual <= V_POS + 1; wr_data_manual <= ascii_tens; wr_en_manual <= 1;
+                    ascii_units <= 8'h30 + (abs_val2 % 10);
+                    state <= UPDATE_V_2;
+                end
+                UPDATE_V_2: begin
+                    wr_addr_manual <= V_POS + 2; wr_data_manual <= ascii_units; wr_en_manual <= 1;
+
+                    //Preparar escritura de width
+                    writer_value <= width+1; //adjust for 0-based index
+                    writer_base_addr <= WIDTH_POS;
+                    start_writer <= 1;
+                    state <= WRITE_WIDTH;
                     end
 
-                    UPDATE_H_0: begin
-                        wr_addr_manual <= H_POS + 0; wr_data_manual <= ascii_sign; wr_en_manual <= 1;
-                        ascii_tens  <= (abs_val >= 10) ? 8'h31 : 8'h20;
-                        state <= UPDATE_H_1;
+                WRITE_WIDTH: begin
+                    start_writer <= 0;
+                    state <= WAIT_WIDTH;
+                end
+
+                WAIT_WIDTH: begin
+                    if (!busy_writer) begin
+                        //Preparar escritura de height
+                        writer_value     <= height+1; //adjust for 0-based index
+                        writer_base_addr <= HEIGHT_POS;
+                        start_writer     <= 1;
+                        state            <= WRITE_HEIGHT;
                     end
+                end
 
-                    UPDATE_H_1: begin
-                        wr_addr_manual <= H_POS + 1; wr_data_manual <= ascii_tens; wr_en_manual <= 1;
-                        ascii_units <= 8'h30 + (abs_val % 10);
-                        state <= UPDATE_H_2;
-                    end
+                WRITE_HEIGHT: begin
+                    start_writer <= 0;
+                    state <= WAIT_HEIGHT;
+                end
 
-                    UPDATE_H_2: begin
-                        wr_addr_manual <= H_POS + 2; wr_data_manual <= ascii_units; wr_en_manual <= 1;
-                        state <= UPDATE_V_0;
-                    end
-
-                    UPDATE_V_0: begin
-                        wr_addr_manual <= V_POS + 0; wr_data_manual <= ascii_sign2; wr_en_manual <= 1;
-                        ascii_tens  <= (abs_val2 >= 10) ? 8'h31 : 8'h20;
-                        state <= UPDATE_V_1;
-                    end
-
-                    UPDATE_V_1: begin
-                        wr_addr_manual <= V_POS + 1; wr_data_manual <= ascii_tens; wr_en_manual <= 1;
-                        ascii_units <= 8'h30 + (abs_val2 % 10);
-                        state <= UPDATE_V_2;
-                    end
-                    UPDATE_V_2: begin
-                        wr_addr_manual <= V_POS + 2; wr_data_manual <= ascii_units; wr_en_manual <= 1;
-
-                        //Preparar escritura de width
-                        writer_value <= width+1; //adjust for 0-based index
-                        writer_base_addr <= WIDTH_POS;
-                        start_writer <= 1;
-                        state <= WRITE_WIDTH;
-                        end
-
-                    WRITE_WIDTH: begin
-                        start_writer <= 0;
-                        state <= WAIT_WIDTH;
-                    end
-
-                    WAIT_WIDTH: begin
-                        if (!busy_writer) begin
-                            //Preparar escritura de height
-                            writer_value     <= height+1; //adjust for 0-based index
-                            writer_base_addr <= HEIGHT_POS;
-                            start_writer     <= 1;
-                            state            <= WRITE_HEIGHT;
-                        end
-                    end
-
-                    WRITE_HEIGHT: begin
-                        start_writer <= 0;
-                        state <= WAIT_HEIGHT;
-                    end
-
-                    WAIT_HEIGHT: begin
-                        if (!busy_writer)
-                            state <= IDLE;
-                    end
-                endcase
-
-            //end
-        end
+                WAIT_HEIGHT: begin
+                    if (!busy_writer)
+                        state <= IDLE;
+                        wait_key <= 0;
+                end
+            endcase 
+        end        
     end
+
+    // Señales para string_to_ram_writer
+    logic start_str;
+    logic busy_str;
+    logic [5:0] str_index;
+    logic [10:0] str_base_addr;
+    logic wr_en_str;
+    logic [10:0] wr_addr_str;
+    logic [7:0] wr_data_str;
+    logic init_done;
+
+    // Instancia del módulo string_to_ram_writer
+    string_to_ram_writer str_writer_inst (
+        .clk(clk),
+        .start(start_str),
+        .string_index(str_index),
+        .base_addr(str_base_addr),
+        .wr_en(wr_en_str),
+        .wr_addr(wr_addr_str),
+        .wr_data(wr_data_str),
+        .busy(busy_str)
+    );
 
     logic start_writer, busy_writer;
     logic signed [13:0] writer_value;
@@ -216,9 +314,16 @@ module osd_top #(
         .busy(busy_writer)
     );
     // Multiplexor de acceso a la RAM de caracteres
-    assign wr_en   = wr_en_writer  | wr_en_manual;
-    assign wr_addr = wr_en_writer  ? wr_addr_writer  : wr_addr_manual;
-    assign wr_data = wr_en_writer  ? wr_data_writer  : wr_data_manual;
+    // assign wr_en   = wr_en_writer  | wr_en_manual;
+    // assign wr_addr = wr_en_writer  ? wr_addr_writer  : wr_addr_manual;
+    // assign wr_data = wr_en_writer  ? wr_data_writer  : wr_data_manual;
+
+        // Multiplexor de acceso a la RAM de caracteres
+    assign wr_en   = wr_en_str   | wr_en_writer   | wr_en_manual;
+    assign wr_addr = wr_en_str   ? wr_addr_str    :
+                 wr_en_writer ? wr_addr_writer : wr_addr_manual;
+    assign wr_data = wr_en_str   ? wr_data_str    :
+                 wr_en_writer ? wr_data_writer : wr_data_manual;    
 
 
     logic [2:0] video_osd;
@@ -227,27 +332,29 @@ module osd_top #(
     logic hblank_d1, hblank_d2, hblank_d3, vblank_d1, vblank_d2, vblank_d3;
     logic [9:0] x_d1, x_d2, y_d1, y_d2;
     logic osd_d1, osd_d2;
-    logic osd_active_raw;
+    logic osd_active;
     logic disp_dbg;
 
     osd_timer #(.CLK_HZ(CLK_HZ), .DURATION_SEC(DURATION_SEC)) timer_inst (
         .clk(clk),
         .reset(reset),
-        .enable(key_event),
-        .active(osd_active_raw)
+        .enable(key_leftr || key_rightr || key_downr || key_upr),
+        .active(osd_active)
     );
 
     always_ff @(posedge clk) begin
+         if (pixel_ce) begin
             R_d1 <= R_in; R_d2 <= R_d1; R_d3 <= R_d2;
             G_d1 <= G_in; G_d2 <= G_d1; G_d3 <= G_d2;
             B_d1 <= B_in; B_d2 <= B_d1; B_d3 <= B_d2;
-            hsync_d1 <= hsync_in; hsync_d2 <= hsync_d1; hsync_d3 <= hsync_d2;
-            vsync_d1 <= vsync_in; vsync_d2 <= vsync_d1; vsync_d3 <= vsync_d2;
-            hblank_d1 <= hblank; hblank_d2 <= hblank_d1; hblank_d3 <= hblank_d2;
-            vblank_d1 <= vblank; vblank_d2 <= vblank_d1; vblank_d3 <= vblank_d2;
+            hsync_d1 <= hsync_in; hsync_d2 <= hsync_d1; // hsync_d3 <= hsync_d2;
+            vsync_d1 <= vsync_in; vsync_d2 <= vsync_d1; // vsync_d3 <= vsync_d2;
+            hblank_d1 <= hblank; hblank_d2 <= hblank_d1;// hblank_d3 <= hblank_d2;
+            vblank_d1 <= vblank; vblank_d2 <= vblank_d1;// vblank_d3 <= vblank_d2;
             // x_d1 <= x_pix[9:0]; x_d2 <= x_d1;
             // y_d1 <= y_pix[9:0]; y_d2 <= y_d1;
-            // osd_d1 <= osd_active_raw; osd_d2 <= osd_d1;
+            // osd_d1 <= osd_active; osd_d2 <= osd_d1;
+         end
     end
 
     osd_overlay #(
@@ -260,7 +367,7 @@ module osd_top #(
         .vblank(vblank),
         .x(x_pix[9:0]),
         .y(y_pix[9:0]),
-        .osd_active(osd_active_raw),
+        .osd_active(osd_active),
         .video_out(video_osd),
         .addr_b(char_rd_addr),
         .char_code(char_code),
@@ -272,15 +379,15 @@ module osd_top #(
 
     // Peso: 3/4 fondo + 1/4 OSD → (background >> 2) + (OSD >> 2)
     logic [7:0] Rgrayout, Ggrayout, Bgrayout;
-    assign Rgrayout = (R_d3 >> 1) + (OSD_GRAY >> 2);
-    assign Ggrayout = (G_d3 >> 1) + (OSD_GRAY >> 2);
-    assign Bgrayout = (B_d3 >> 1) + (OSD_GRAY >> 2);
+    assign Rgrayout = (R_d2 >> 1) + (OSD_GRAY >> 2);
+    assign Ggrayout = (G_d2 >> 1) + (OSD_GRAY >> 2);
+    assign Bgrayout = (B_d2 >> 1) + (OSD_GRAY >> 2);
 
-    assign {R_out, G_out, B_out} = (video_osd == 3'b111) ? 24'hFFFFFF : (osd_active_raw ? {Rgrayout,Ggrayout,Bgrayout} : {R_d3, G_d3, B_d3});
-    assign hsync_out = hsync_d3;
-    assign vsync_out = vsync_d3;
-    assign hblank_out = hblank_d3;
-    assign vblank_out = vblank_d3;
+    assign {R_out, G_out, B_out} = (video_osd == 3'b111) ? 24'hFFFFFF : (osd_active ? {Rgrayout,Ggrayout,Bgrayout} : {R_d2, G_d2, B_d2});
+    assign hsync_out = hsync_d2;
+    assign vsync_out = vsync_d2;
+    assign hblank_out = hblank_d2;
+    assign vblank_out = vblank_d2;
     assign h_offset_out = h_offset;
     assign v_offset_out = v_offset;
 endmodule

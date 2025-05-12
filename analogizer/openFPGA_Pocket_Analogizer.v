@@ -57,7 +57,7 @@
 //cart_tran_bank2[6] ------------------------------------------------------------------------------------------------------------------------------+     |     |     |     |     |     |     |     |     |     |     |
 //cart_tran_bank2[7] ------------------------------------------------------------------------------------------------------------------------------------+     |     |     |     |     |     |     |     |     |     |                                   
 //------------------                                                                                                                                           |     |     |     |     |     |     |     |     |     |
-//cart_tran_bank1[0] ------------------------------------------------------------------------------------------------------------------------------------------+     |     |     |     |     |     |     |     |     |
+//cart_tran_bank1[0] ------------------------------------------------------------------------------------------------------------et_sw------------------------------+     |     |     |     |     |     |     |     |     |
 //cart_tran_bank1[1] ------------------------------------------------------------------------------------------------------------------------------------------------+     |     |     |     |     |     |     |     |
 //cart_tran_bank1[2] ------------------------------------------------------------------------------------------------------------------------------------------------------+     |     |     |     |     |     |     |
 //cart_tran_bank1[3] ------------------------------------------------------------------------------------------------------------------------------------------------------------+     |     |     |     |     |     |
@@ -73,7 +73,8 @@
 module openFPGA_Pocket_Analogizer #(parameter MASTER_CLK_FREQ=50_000_000, parameter LINE_LENGTH, parameter ADDRESS_ANALOGIZER_CONFIG=8'hF7) (
 	input  wire clk_74a,
 	input  wire i_clk,
-    input  wire i_rst,
+	input  wire i_rst_apf, //active High
+    input  wire i_rst_core,//active High
 	input  wire i_ena,
 	//Video interface
 	input  wire video_clk,
@@ -144,14 +145,25 @@ module openFPGA_Pocket_Analogizer #(parameter MASTER_CLK_FREQ=50_000_000, parame
 	//Configuration file dat
 	//reg [31:0] analogizer_bridge_rd_data;
 	reg  [31:0] analogizer_config = 0;
-	wire [31:0]   analogizer_config_s;
-	reg [31:0] config_mem [16]; //configuration memory
+	wire [31:0] analogizer_config_s;
+	reg  [31:0] config_mem [16]; //configuration memory
 	
-	synch_3 #(.WIDTH(32)) analogizer_sync(analogizer_config, analogizer_config_s, i_clk);
+	synch_3 #(.WIDTH(32)) analogizer_sync({i_busyr,analogizer_config[30:0]}, analogizer_config_s, i_clk);
 
 	wire [31:0] memory_out;
 	reg [3:0] word_cnt;
+	reg i_busyr;
+
 	// handle memory mapped I/O from pocket
+	always @(posedge clk_74a) begin
+		if(i_rst_apf) begin
+			i_busyr <= 1'b1;
+		end
+		else begin
+			i_busyr <= 1'b0;
+		end
+	end
+
 	always @(posedge clk_74a) begin
 		if(bridge_wr) begin
 			case(bridge_addr[31:24])
@@ -177,6 +189,8 @@ module openFPGA_Pocket_Analogizer #(parameter MASTER_CLK_FREQ=50_000_000, parame
 		end
 	end
 	assign memory_out = config_mem[bridge_addr[3:0]];
+	assign busy = i_busyrr;
+	reg i_busyrr;
 
   always @(posedge i_clk) begin
     snac_game_cont_type   <= analogizer_config_s[4:0];
@@ -184,6 +198,7 @@ module openFPGA_Pocket_Analogizer #(parameter MASTER_CLK_FREQ=50_000_000, parame
     analogizer_video_type <= analogizer_config_s[13:10];	
 	pocket_blank_screen   <= analogizer_config_s[14];
     analogizer_osd_out2	  <= analogizer_config_s[15];
+	i_busyrr		      <= analogizer_config_s[31];
   end
 
   wire conf_AB = (snac_game_cont_type >= 5'd16);
@@ -223,7 +238,7 @@ assign analogizer_osd_out        = analogizer_osd_out2;
 	openFPGA_Pocket_Analogizer_SNAC #(.MASTER_CLK_FREQ(MASTER_CLK_FREQ)) snac
 	(
 		.i_clk(i_clk),
-		.i_rst(i_rst),
+		.i_rst(i_rst_apf),
 		.conf_AB(conf_AB),              //0 conf. A(default), 1 conf. B (see graph above)
 		.game_cont_type(snac_game_cont_type), //0-15 Conf. A, 16-31 Conf. B
 		//.game_cont_sample_rate(game_cont_sample_rate), //0 compatibility mode (slowest), 1 normal mode, 2 fast mode, 3 superfast mode
@@ -234,7 +249,7 @@ assign analogizer_osd_out        = analogizer_osd_out2;
 		.p3_btn_state(p3_btn_state),
 		.p4_btn_state(p4_btn_state),
 		.i_VIB_SW1(i_VIB_SW1), .i_VIB_DAT1(i_VIB_DAT1), .i_VIB_SW2(i_VIB_SW2), .i_VIB_DAT2(i_VIB_DAT2), 
-		.busy(busy),    
+		.busy(),    
 		//SNAC Pocket cartridge port interface (see graph above)   
 		.CART_BK0_OUT(CART_BK0_OUT),
 		.CART_BK0_IN(CART_BK0_IN),
@@ -440,26 +455,26 @@ scanlines_analogizer #(0) VGA_scanlines
 
 	//infer tri-state buffers for cartridge data signals
 	//BK0
-	assign cart_tran_bank0         = i_rst | ~i_ena ? 4'hf : ((CART_BK0_DIR) ? CART_BK0_OUT : 4'hZ);     //on reset state set ouput value to 4'hf
-	assign cart_tran_bank0_dir     = i_rst | ~i_ena ? 1'b1 : CART_BK0_DIR;                              //on reset state set pin dir to output
+	assign cart_tran_bank0         = i_rst_apf | ~i_ena ? 4'hf : ((CART_BK0_DIR) ? CART_BK0_OUT : 4'hZ);     //on reset state set ouput value to 4'hf
+	assign cart_tran_bank0_dir     = i_rst_apf | ~i_ena ? 1'b1 : CART_BK0_DIR;                              //on reset state set pin dir to output
 	assign CART_BK0_IN             = cart_tran_bank0;
 	//BK3
-	assign cart_tran_bank3         = i_rst | ~i_ena ? 8'hzz : {Rout[5:0],HsyncOut,VsyncOut};                          //on reset state set ouput value to 8'hZ
-	assign cart_tran_bank3_dir     = i_rst | ~i_ena ? 1'b0  : 1'b1;                                     //on reset state set pin dir to input
+	assign cart_tran_bank3         = i_rst_apf | ~i_ena ? 8'hzz : {Rout[5:0],HsyncOut,VsyncOut};                          //on reset state set ouput value to 8'hZ
+	assign cart_tran_bank3_dir     = i_rst_apf | ~i_ena ? 1'b0  : 1'b1;                                     //on reset state set pin dir to input
 	//BK2
-	assign cart_tran_bank2         = i_rst | ~i_ena ? 8'hzz : {Bout[0],BLANKnOut,Gout[5:0]};                          //on reset state set ouput value to 8'hZ
-	assign cart_tran_bank2_dir     = i_rst | ~i_ena ? 1'b0  : 1'b1;                                     //on reset state set pin dir to input
+	assign cart_tran_bank2         = i_rst_apf | ~i_ena ? 8'hzz : {Bout[0],BLANKnOut,Gout[5:0]};                          //on reset state set ouput value to 8'hZ
+	assign cart_tran_bank2_dir     = i_rst_apf | ~i_ena ? 1'b0  : 1'b1;                                     //on reset state set pin dir to input
 	//BK1
-	assign cart_tran_bank1         = i_rst | ~i_ena ? 8'hzz : {CART_BK1_OUT_P76,video_clk,Bout[5:1]};      //on reset state set ouput value to 8'hZ
-	assign cart_tran_bank1_dir     = i_rst | ~i_ena ? 1'b0  : 1'b1;                                     //on reset state set pin dir to input
+	assign cart_tran_bank1         = i_rst_apf | ~i_ena ? 8'hzz : {CART_BK1_OUT_P76,video_clk,Bout[5:1]};      //on reset state set ouput value to 8'hZ
+	assign cart_tran_bank1_dir     = i_rst_apf | ~i_ena ? 1'b0  : 1'b1;                                     //on reset state set pin dir to input
 	//PIN30
-	assign cart_tran_pin30         = i_rst | ~i_ena ? 1'bz : ((CART_PIN30_DIR) ? CART_PIN30_OUT : 1'bZ); //on reset state set ouput value to 4'hf
-	assign cart_tran_pin30_dir     = i_rst | ~i_ena ? 1'b0 : CART_PIN30_DIR;                              //on reset state set pin dir to output
+	assign cart_tran_pin30         = i_rst_apf | ~i_ena ? 1'bz : ((CART_PIN30_DIR) ? CART_PIN30_OUT : 1'bZ); //on reset state set ouput value to 4'hf
+	assign cart_tran_pin30_dir     = i_rst_apf | ~i_ena ? 1'b0 : CART_PIN30_DIR;                              //on reset state set pin dir to output
 	assign CART_PIN30_IN           = cart_tran_pin30;
-	assign cart_pin30_pwroff_reset = i_rst | ~i_ena ? 1'b0 : 1'b1;                                      //1'b1 (GPIO USE)
+	assign cart_pin30_pwroff_reset = i_rst_apf | ~i_ena ? 1'b0 : 1'b1;                                      //1'b1 (GPIO USE)
 	//PIN31
-	assign cart_tran_pin31         = i_rst | ~i_ena ? 1'bz : ((CART_PIN31_DIR) ? CART_PIN31_OUT : 1'bZ); //on reset state set ouput value to 4'hf
-	assign cart_tran_pin31_dir     = i_rst | ~i_ena ? 1'b0 : CART_PIN31_DIR;                            //on reset state set pin dir to input
+	assign cart_tran_pin31         = i_rst_apf | ~i_ena ? 1'bz : ((CART_PIN31_DIR) ? CART_PIN31_OUT : 1'bZ); //on reset state set ouput value to 4'hf
+	assign cart_tran_pin31_dir     = i_rst_apf | ~i_ena ? 1'b0 : CART_PIN31_DIR;                            //on reset state set pin dir to input
 	assign CART_PIN31_IN           = cart_tran_pin31;
 endmodule
 

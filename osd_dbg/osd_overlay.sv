@@ -68,7 +68,7 @@ module osd_overlay #(
 
     //obtener direccion de la rom
     //caracter + posicion y
-    logic [9:0] font_addr;
+    logic [10:0] font_addr;
     assign font_addr = {char_code, y20_r2}; // Direccion de la rom de fuente
 
     // Acceso a ROM de fuente

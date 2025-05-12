@@ -1063,7 +1063,7 @@ module core_top
 
     osd_top #(
     .CLK_HZ(32_000_000),
-    .DURATION_SEC(3)
+    .DURATION_SEC(4)
     ) osd_debug_inst (
         .clk(clk_sys),
         .reset(reset_sw),
@@ -1075,10 +1075,10 @@ module core_top
         .vsync_in(VSync),
         .hblank(core_hb),
         .vblank(core_vb),
-        .key_right(p1_controls[15] && !left_r && p1_controls[2]),
-        .key_left(p1_controls[15] && !right_r && p1_controls[3] ),
-        .key_down(p1_controls[15] && !up_r && p1_controls[0]),
-        .key_up(p1_controls[15] && !down_r && p1_controls[1]),
+        .key_right(p1_controls[15] && !left_r && p1_controls[2]), //Detects if Start+Left was pressed
+        .key_left(p1_controls[15] && !right_r && p1_controls[3] ),//Detects if Start+Right was pressed
+        .key_down(p1_controls[15] && !up_r && p1_controls[0]),    //Detects if Start+Up was pressed
+        .key_up(p1_controls[15] && !down_r && p1_controls[1]),    //Detects if Start+Down was pressed
         .R_out(RGB_out_R),
         .G_out(RGB_out_G),
         .B_out(RGB_out_B),
@@ -1087,15 +1087,21 @@ module core_top
         .hblank_out(HB_out),
         .vblank_out(VB_out),
         .h_offset_out(hoffset),
-        .v_offset_out(voffset)
+        .v_offset_out(voffset),
+        .analogizer_ready(!busy),
+        .analogizer_video_type(analogizer_video_type),
+        .snac_game_cont_type(snac_game_cont_type),
+        .snac_cont_assignment(snac_cont_assignment)
     );
 
     //32_000_000
     wire [31:0] analogizer_bridge_rd_data;
+    wire busy;
     openFPGA_Pocket_Analogizer #(.MASTER_CLK_FREQ(32_000_000), .LINE_LENGTH(512), .ADDRESS_ANALOGIZER_CONFIG(ADDRESS_ANALOGIZER_CONFIG)) analogizer (
         .clk_74a(clk_74a),
         .i_clk(clk_sys),
-        .i_rst(reset_sw), //i_rst is active high
+        .i_rst_apf(~reset_n), //i_rst_apf is active high
+        .i_rst_core(reset_sw), //i_rst_core is active high
         //.i_ena(analogizer_ena),
         .i_ena(1'b1),
 
@@ -1137,7 +1143,8 @@ module core_top
         .p2_btn_state(p2_btn_CK),  
         .p2_joy_state(p2_joy_CK),
         .p3_btn_state(),
-        .p4_btn_state(),      
+        .p4_btn_state(),  
+        .busy(busy),    
         //Pocket Analogizer IO interface to the Pocket cartridge port
         .cart_tran_bank2(cart_tran_bank2),
         .cart_tran_bank2_dir(cart_tran_bank2_dir),
