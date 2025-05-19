@@ -8,6 +8,8 @@
 // License: MIT
 //
 `default_nettype none
+import m72_pkg::*;
+
 module osd_top #(
     parameter int CLK_HZ = 32_000_000,
     parameter int DURATION_SEC = 4,
@@ -29,6 +31,7 @@ module osd_top #(
     input  logic         key_right,
     input  logic         key_up,
     input  logic         key_down,
+    input  logic         key_A,
     output logic [7:0]   R_out,
     output logic [7:0]   G_out,
     output logic [7:0]   B_out,
@@ -36,8 +39,9 @@ module osd_top #(
     output logic         vsync_out,
     output logic [2:0]   hblank_out,
     output logic [2:0]   vblank_out,
-    output logic signed [4:0] h_offset_out,
+    output logic signed [5:0] h_offset_out,
     output logic signed [4:0] v_offset_out,
+    output logic [1:0] vid_mode_out,
     //Analogizer settings
     input logic       analogizer_ready,
     input logic [3:0] analogizer_video_type,
@@ -49,6 +53,7 @@ module osd_top #(
   logic [10:0] wr_addr, char_rd_addr;
   logic [7:0]  wr_data, char_code;
   logic        wr_en;
+  logic [1:0] vid_mode;
 
     char_ram_dualport #(
         .ADDR_WIDTH(11),
@@ -81,7 +86,7 @@ module osd_top #(
         .ready(timing_ready)
     );
 
-    logic signed [4:0] h_offset=$signed(5'sd0), v_offset=$signed(5'sd0);
+    logic signed [4:0] h_offset=$signed(5'sd0), v_offset=$signed(4'sd0);
 
     typedef enum logic [4:0] {
         INIT_IDLE, INIT_WAIT, INIT_NEXT, INIT_DONE,
@@ -92,10 +97,11 @@ module osd_top #(
     } state_t;
 
     state_t state;
-    logic key_leftr, key_rightr, key_upr, key_downr;
+    logic key_leftr, key_rightr, key_upr, key_downr, key_A_r;
 
     logic [7:0] ascii_sign, ascii_sign2, ascii_tens, ascii_units;
-    logic [4:0] abs_val, abs_val2;
+    logic [4:0] abs_val;
+    logic [4:0] abs_val2;
     logic signed [4:0] val;
 
     localparam int H_POS = 12 * COLS + 25;
@@ -105,19 +111,19 @@ module osd_top #(
     localparam int VIDEO_POS = 16 * COLS + 18;
     localparam int SNAC_DEV_POS = 17 * COLS + 18;
     localparam int SNAC_ASG_POS = 18 * COLS + 18;
-
-    localparam int NUM_STRINGS_TO_WRITE = 4;  // modificar según número a mostrar al inicio
+    localparam int HZ_POS = 3 * COLS + 43;
 
     logic [10:0] wr_addr_manual;
     logic [7:0]  wr_data_manual;
     logic        wr_en_manual;
     logic wait_key;
-    logic [2:0] data_info_idx; //one value for case default
+    logic [2:0] data_info_idx;
     always_ff @(posedge clk) begin
         key_leftr <= key_left;
         key_rightr <= key_right;
         key_upr <= key_up;
         key_downr <= key_down;
+        key_A_r <= key_A;
         
         if (reset) begin
             data_info_idx <= 0;
@@ -133,14 +139,26 @@ module osd_top #(
             //start_str      <= 0;
         end else begin
             wr_en_manual <= 0;
+            //vid_mode <= 2'd0; //55Hz default
 
         
             //State machine para escribir valores en la RAM ya convertidos a formato ASCII
             case (state)
                 INIT_IDLE: begin
                     start_str <= 0;
-                    if(analogizer_ready) state <= INIT_WAIT;
-                    else state <= INIT_IDLE;
+                    // if(analogizer_ready) state <= INIT_WAIT;
+                    // else state <= INIT_IDLE;
+                    if (!wait_key && (key_leftr || key_rightr || key_downr || key_upr || key_A_r)) begin
+                        if (key_leftr && (h_offset > -5'sd15)) h_offset <= h_offset + $signed(-5'sd1);
+                        else if (key_rightr && (h_offset < 5'sd15)) h_offset <= h_offset + $signed(5'sd1);
+                        if (key_upr && (v_offset > -5'sd15)) v_offset <= v_offset + $signed(-5'sd1);
+                        else if (key_downr && (v_offset < 5'sd15)) v_offset <= v_offset + $signed(5'sd1);
+
+                        if(key_A_r) vid_mode <= vid_mode + 2'd1;
+                        
+                        state <= INIT_WAIT;
+                        wait_key <= 1;
+                    end
                 end
 
                 INIT_WAIT: begin
@@ -168,7 +186,15 @@ module osd_top #(
                                     start_str     <= 1;
                                     state    <= INIT_NEXT;
                                 end 
+                                3'd3: begin
+                                    str_index     <= {4'b0,vid_mode} + 6'd35; //see string_to_ram_writer
+                                    str_base_addr <= HZ_POS;
+                                    data_info_idx <= data_info_idx + 1;
+                                    start_str     <= 1;
+                                    state    <= INIT_NEXT;
+                                end 
                                 default: begin
+                                    data_info_idx <= 0; //importate: reiniciar data_info_idx o no se actualizara vid mode msg
                                     init_done <= 1;
                                     state <= INIT_DONE;
                                 end
@@ -190,14 +216,16 @@ module osd_top #(
                     state <= IDLE;
                 end
                 IDLE: 
-                    if (!wait_key && (key_leftr || key_rightr || key_downr || key_upr)) begin
-                        if (key_leftr && (h_offset > -5'sd15)) h_offset <= h_offset + $signed(-5'sd1);
-                        else if (key_rightr && (h_offset < 5'sd15)) h_offset <= h_offset + $signed(5'sd1);
-                        if (key_upr && (v_offset > -5'sd15)) v_offset <= v_offset + $signed(-5'sd1);
-                        else if (key_downr && (v_offset < 5'sd15)) v_offset <= v_offset + $signed(5'sd1);
-                        state <= COPY_OFFSET;
-                        wait_key <= 1;
-                    end
+                    // if (!wait_key && (key_leftr || key_rightr || key_downr || key_upr || key_A_r)) begin
+                    //     if (key_leftr && (h_offset > -5'sd15)) h_offset <= h_offset + $signed(-5'sd1);
+                    //     else if (key_rightr && (h_offset < 5'sd15)) h_offset <= h_offset + $signed(5'sd1);
+                    //     if (key_upr && (v_offset > -5'sd15)) v_offset <= v_offset + $signed(-5'sd1);
+                    //     else if (key_downr && (v_offset < 5'sd15)) v_offset <= v_offset + $signed(5'sd1);
+                    //     if(key_A_r) vid_mode <= vid_mode + 2'd1;
+                    //     state <= COPY_OFFSET;
+                    //     wait_key <= 1;
+                    // end
+                    state <= COPY_OFFSET;
                 COPY_OFFSET:begin
                         ascii_sign  <= (h_offset < 0) ? 8'h2D : 8'h2B;
                         ascii_sign2 <= (v_offset < 0) ? 8'h2D : 8'h2B;
@@ -266,7 +294,7 @@ module osd_top #(
 
                 WAIT_HEIGHT: begin
                     if (!busy_writer)
-                        state <= IDLE;
+                        state <= INIT_IDLE;
                         wait_key <= 0;
                 end
             endcase 
@@ -338,7 +366,7 @@ module osd_top #(
     osd_timer #(.CLK_HZ(CLK_HZ), .DURATION_SEC(DURATION_SEC)) timer_inst (
         .clk(clk),
         .reset(reset),
-        .enable(key_leftr || key_rightr || key_downr || key_upr),
+        .enable(key_leftr || key_rightr || key_downr || key_upr || key_A_r),
         .active(osd_active)
     );
 
@@ -371,7 +399,7 @@ module osd_top #(
         .video_out(video_osd),
         .addr_b(char_rd_addr),
         .char_code(char_code),
-        .disp_dbg(disp_dbg),
+        .disp_dbg(disp_dbg)
     );
 
     // Color del OSD (gris), por ejemplo: 0xA0
@@ -390,4 +418,5 @@ module osd_top #(
     assign vblank_out = vblank_d2;
     assign h_offset_out = h_offset;
     assign v_offset_out = v_offset;
+    assign vid_mode_out = vid_mode;
 endmodule

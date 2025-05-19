@@ -185,7 +185,7 @@ assign P1L = ~(CP15A & a_opaque) & ~(CP15B & b_opaque) & ~(CP8A & BITA[3]) & ~(C
 
 kna91h014 kna91h014(
     .CLK_32M(CLK_32M),
-    .CE_PIX(CE_PIX),
+    //.CE_PIX(CE_PIX),
 
     .G(palette_memrq),
     .SELECT(S),

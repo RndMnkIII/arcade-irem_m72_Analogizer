@@ -1,8 +1,3 @@
-//------------------------------------------------------------------------------
-// SPDX-License-Identifier: GPL-3.0-or-later
-// SPDX-FileType: SOURCE
-// SPDX-FileCopyrightText: (c) 2024, OpenGateware authors and contributors
-//------------------------------------------------------------------------------
 //
 // SDRAM Controller
 // Copyright (c) 2013 Till Harbaum <till@harbaum.org> 

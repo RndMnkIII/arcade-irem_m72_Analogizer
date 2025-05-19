@@ -1,8 +1,3 @@
-//------------------------------------------------------------------------------
-// SPDX-License-Identifier: GPL-3.0-or-later
-// SPDX-FileType: SOURCE
-// SPDX-FileCopyrightText: (c) 2022, Martin Donlon
-//------------------------------------------------------------------------------
 //
 // Irem M72 - ROM loading
 // Copyright (C) 2022 Martin Donlon
@@ -21,6 +16,8 @@
 //
 //------------------------------------------------------------------------------
 
+
+
 import m72_pkg::*;
 
 module rom_loader
@@ -28,6 +25,8 @@ module rom_loader
     input sys_clk,
 
     input ioctl_downl,
+
+
     input ioctl_wr,
     input [7:0] ioctl_data,
 

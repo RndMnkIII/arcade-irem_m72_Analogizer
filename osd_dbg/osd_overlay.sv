@@ -88,7 +88,8 @@ module osd_overlay #(
 
     logic display_bit;
     always_ff @(posedge clk) begin
-        display_bit <= font_data[X20_r3]; // Extraer el bit correspondiente al pixel
+        //display_bit <= font_data[X20_r3]; // Extraer el bit correspondiente al pixel (Reversed)
+        display_bit <= font_data[7-X20_r3]; // Extraer el bit correspondiente al pixel
     end
 
     assign video_out = (dar4 && osdar4) ? {3{display_bit}} : 3'b000; // Si estamos en la zona activa y el OSD está activo, mostramos el bit de OSD

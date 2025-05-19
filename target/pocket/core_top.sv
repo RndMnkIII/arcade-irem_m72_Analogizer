@@ -32,6 +32,7 @@
 
 `default_nettype none
 `timescale 1ns/1ps
+import m72_pkg::*;
 
 module core_top
     #(
@@ -298,12 +299,12 @@ module core_top
     // link port is input only
     assign port_tran_so      = 1'bZ;
     assign port_tran_so_dir  = 1'b0; // SO is output only
-    assign port_tran_si      = 1'bZ;
-    assign port_tran_si_dir  = 1'b0; // SI is input only
-    assign port_tran_sck     = 1'bZ;
-    assign port_tran_sck_dir = 1'b0; // clock direction can change
-    assign port_tran_sd      = 1'bZ;
-    assign port_tran_sd_dir  = 1'b0; // SD is input and not used
+    //assign port_tran_si      = 1'bZ;
+    //assign port_tran_si_dir  = 1'b0; // SI is input only
+    //assign port_tran_sck     = 1'bZ;
+    //assign port_tran_sck_dir = 1'b0; // clock direction can change
+    //assign port_tran_sd      = 1'bZ;
+    //assign port_tran_sd_dir  = 1'b0; // SD is input and not used
 
     //!-------------------------------------------------------------------------
     //! MISC
@@ -674,7 +675,7 @@ module core_top
         // Clocks and Reset
         .clk_74b    ( clk_74b    ),
         .clk_sys    ( clk_sys    ),
-        .reset      ( reset_sw   ),
+        .reset      ( reset   ),
         // Controls
         .afilter_sw ( afilter_sw ),
         .vol_att    ( vol_att    ),
@@ -787,6 +788,7 @@ module core_top
     //! Clocks
     //! ------------------------------------------------------------------------
     wire pll_core_locked, pll_core_locked_s;
+    reg pll_init_locked = 0;
     wire clk_sys;       //! Core :  32.000Mhz
     wire clk_vid;       //! Video:   8.000Mhz
     wire clk_vid_90deg; //! Video:   8.000Mhz @ 90deg Phase Shift
@@ -801,12 +803,222 @@ module core_top
         .outclk_1 ( clk_sys         ),
         .outclk_2 ( clk_vid         ),
         .outclk_3 ( clk_vid_90deg   ),
-
+        .reconfig_to_pll(reconfig_to_pll),
+        .reconfig_from_pll(reconfig_from_pll),
         .locked   ( pll_core_locked )
     );
 
+    wire [63:0] reconfig_to_pll;
+    wire [63:0] reconfig_from_pll;
+    wire        cfg_waitrequest;
+    reg         cfg_write;
+    reg   [5:0] cfg_address;
+    reg  [31:0] cfg_data;
+
+    pll_cfg pll_cfg
+    (
+        .mgmt_clk(clk_74a),
+        .mgmt_reset(0),
+        .mgmt_waitrequest(cfg_waitrequest),
+        .mgmt_read(0),
+        .mgmt_readdata(),
+        .mgmt_write(cfg_write),
+        .mgmt_address(cfg_address),
+        .mgmt_writedata(cfg_data),
+        .reconfig_to_pll(reconfig_to_pll),
+        .reconfig_from_pll(reconfig_from_pll)
+    );
+
+
+    // PLL Configuration (Integral)
+
+    // 96Mhz, 32Mhz, 8Mhz
+//   'h3E, // START OF MIF
+//   'h4, 'h4040, // M COUNTER
+//   'h3, 'h20605, // N COUNTER
+//   'h5, 'h20504, // C COUNTER
+//   'h5, 'h60E0D, // C COUNTER
+//   'h5, 'h83636, // C COUNTER
+//   'h5, 'hC3636, // C COUNTER
+//   'h5, 'h110101, // C COUNTER
+//   'h5, 'h150101, // C COUNTER
+//   'h5, 'h190101, // C COUNTER
+//   'h5, 'h1D0101, // C COUNTER
+//   'h5, 'h210101, // C COUNTER
+//   'h5, 'h250101, // C COUNTER
+//   'h5, 'h290101, // C COUNTER
+//   'h5, 'h2D0101, // C COUNTER
+//   'h5, 'h310101, // C COUNTER
+//   'h5, 'h350101, // C COUNTER
+//   'h5, 'h390101, // C COUNTER
+//   'h5, 'h3D0101, // C COUNTER
+//   'h5, 'h410101, // C COUNTER
+//   'h5, 'h450101, // C COUNTER
+//   'h9, 'h2, // CHARGE PUMP
+//   'h8, 'h3, // BANDWIDTH
+//   'h3F, // END OF MIF
+
+
+    // 99.450549 Mhz, 33.150183 Mhz MiSter
+    //99.45, 33.15, 8.2875          Pocket
+//   'h3E, // START OF MIF
+//   'h4, 'h26F6E, // M COUNTER
+//   'h3, 'h20605, // N COUNTER
+//   'h5, 'h20807, // C COUNTER
+//   'h5, 'h61716, // C COUNTER
+//   'h5, 'h85A5A, // C COUNTER
+//   'h5, 'hC5A5A, // C COUNTER
+//   'h5, 'h110101, // C COUNTER
+//   'h5, 'h150101, // C COUNTER
+//   'h5, 'h190101, // C COUNTER
+//   'h5, 'h1D0101, // C COUNTER
+//   'h5, 'h210101, // C COUNTER
+//   'h5, 'h250101, // C COUNTER
+//   'h5, 'h290101, // C COUNTER
+//   'h5, 'h2D0101, // C COUNTER
+//   'h5, 'h310101, // C COUNTER
+//   'h5, 'h350101, // C COUNTER
+//   'h5, 'h390101, // C COUNTER
+//   'h5, 'h3D0101, // C COUNTER
+//   'h5, 'h410101, // C COUNTER
+//   'h5, 'h450101, // C COUNTER
+//   'h9, 'h2, // CHARGE PUMP
+//   'h8, 'h2, // BANDWIDTH
+//   'h3F, // END OF MIF
+
+
+
+    // 104.687500 Mhz, 34.895833 Mhz               MiSter
+    // 104.692500 Mhz, 34.897500 Mhz, 8.724375 Mhz Pocket
+//   'h3E, // START OF MIF
+//   'h4, 'h24746, // M COUNTER
+//   'h3, 'h505, // N COUNTER
+//   'h5, 'h505, // C COUNTER
+//   'h5, 'h40F0F, // C COUNTER
+//   'h5, 'h83C3C, // C COUNTER
+//   'h5, 'hC3C3C, // C COUNTER
+//   'h5, 'h110101, // C COUNTER
+//   'h5, 'h150101, // C COUNTER
+//   'h5, 'h190101, // C COUNTER
+//   'h5, 'h1D0101, // C COUNTER
+//   'h5, 'h210101, // C COUNTER
+//   'h5, 'h250101, // C COUNTER
+//   'h5, 'h290101, // C COUNTER
+//   'h5, 'h2D0101, // C COUNTER
+//   'h5, 'h310101, // C COUNTER
+//   'h5, 'h350101, // C COUNTER
+//   'h5, 'h390101, // C COUNTER
+//   'h5, 'h3D0101, // C COUNTER
+//   'h5, 'h410101, // C COUNTER
+//   'h5, 'h450101, // C COUNTER
+//   'h9, 'h2, // CHARGE PUMP
+//   'h8, 'h3, // BANDWIDTH
+//   'h3F, // END OF MIF
+
+
+    localparam PLL_PARAM_COUNT = 9;
+    wire [31:0] PLL_55HZ[PLL_PARAM_COUNT * 2] = '{
+        'h0, 'h0, // set waitrequest mode
+        'h4, 'h4040, // M COUNTER
+        'h3, 'h20605, // N COUNTER
+        'h5, 'h20504, // C COUNTER
+        'h5, 'h60E0D, // C COUNTER
+        'h5, 'h83636, // C COUNTER
+        'h5, 'hC3636, // C COUNTER
+        'h8, 'h3, // BANDWIDTH
+        'h2, 'h0 // start reconfigure
+    };
+
+    wire [31:0] PLL_57HZ[PLL_PARAM_COUNT * 2] = '{
+        'h0, 'h0, // set waitrequest mode
+        'h4, 'h26F6E, // M COUNTER
+        'h3, 'h20605, // N COUNTER
+        'h5, 'h20807, // C COUNTER
+        'h5, 'h61716, // C COUNTER
+        'h5, 'h85A5A, // C COUNTER
+        'h5, 'hC5A5A, // C COUNTER
+        'h8, 'h2, // BANDWIDTH
+        'h2, 'h0 // start reconfigure
+    };
+
+    wire [31:0] PLL_60HZ[PLL_PARAM_COUNT * 2] = '{
+        'h0, 'h0, // set waitrequest mode
+        'h4, 'h24746, // M COUNTER
+        'h3, 'h505, // N COUNTER
+        'h5, 'h505, // C COUNTER
+        'h5, 'h40F0F, // C COUNTER
+        'h5, 'h83C3C, // C COUNTER
+        'h5, 'hC3C3C, // C COUNTER
+        'h8, 'h3, // BANDWIDTH
+        'h2, 'h0 // start reconfigure
+    };
+
+    video_timing_t video_timing_lat = VIDEO_55HZ;
+    video_timing_t video_timing;
+    assign video_timing = video_timing_t'(vid_mode_s);
+    reg reconfig_pause = 0;
+    logic [1:0] vid_mode;
+    wire [1:0] vid_mode_s;
+
+    always @(posedge clk_74a) begin
+        reg [4:0] param_idx = 0;
+        reg [7:0] reconfig = 0;
+
+        cfg_write <= 0;
+
+        if (pll_core_locked  & ~cfg_waitrequest) begin
+            pll_init_locked <= 1;
+            if (&reconfig) begin // do reconfig
+                case(video_timing_lat)
+                VIDEO_50HZ: begin
+                    cfg_address <= PLL_55HZ[param_idx * 2 + 0][5:0];
+                    cfg_data    <= PLL_55HZ[param_idx * 2 + 1];
+                end
+                VIDEO_55HZ: begin
+                    cfg_address <= PLL_55HZ[param_idx * 2 + 0][5:0];
+                    cfg_data    <= PLL_55HZ[param_idx * 2 + 1];
+                end
+                VIDEO_57HZ: begin
+                    cfg_address <= PLL_57HZ[param_idx * 2 + 0][5:0];
+                    cfg_data    <= PLL_57HZ[param_idx * 2 + 1];
+                end
+                VIDEO_60HZ: begin
+                    cfg_address <= PLL_60HZ[param_idx * 2 + 0][5:0];
+                    cfg_data    <= PLL_60HZ[param_idx * 2 + 1];
+                end
+                endcase
+
+                cfg_write <= 1;
+                param_idx <= param_idx + 5'd1;
+                if (param_idx == PLL_PARAM_COUNT - 1) reconfig <= 8'd0;
+
+            end else if (video_timing != video_timing_lat) begin // new timing requested
+                video_timing_lat <= video_timing;
+                reconfig <= 8'd1;
+                reconfig_pause <= 1;
+                param_idx <= 0;
+            end else if (|reconfig) begin // pausing before reconfigure
+                reconfig <= reconfig + 8'd1;
+            end else begin
+                reconfig_pause <= 0; // unpause once pll is locked again
+            end
+        end
+    end
+
+    wire reset = reset_sw | ~pll_init_locked_s;
+    wire pll_init_locked_s;
     // Synchronize pll_core_locked into clk_74a domain before usage
-    synch_3 sync_lck(pll_core_locked, pll_core_locked_s, clk_74a);
+    synch_3 sync_lck(pll_init_locked, pll_init_locked_s, clk_sys);
+
+    // Synchronize pll_core_locked into clk_74a domain before usage
+    synch_3 sync_lck2(pll_core_locked, pll_core_locked_s, clk_74a);
+
+    //Synchronize vid_mode into clk_74a domain before usage
+    synch_3 #(.WIDTH(2)) sync_vid_mode(vid_mode, vid_mode_s, clk_74a);
+    
+    // Synchronize reconfig_paus into clk_sys domain before usage
+    wire reconfig_pause_s;
+    synch_3 sync_reconfpause(reconfig_pause, reconfig_pause_s, clk_sys);
 
     //! ------------------------------------------------------------------------
     //! @ IP Core RTL
@@ -817,8 +1029,9 @@ module core_top
         .clk_ram          ( clk_ram           ), // [i]
         .pll_locked       ( pll_core_locked_s ), // [i]
 
-        .reset            ( reset_sw          ), // [i]
-        .pause            ( pause_core        ), // [i]
+        .reset            ( reset          ), // [i]
+        .pause            ( pause_core | reconfig_pause_s), // [i]
+        .vid_mode         ( vid_mode      ), // [i]
 
         .mod_sw           ( mod_sw0           ), // [i]
         .dsw_1            ( dip_sw0           ), // [i]
@@ -1017,21 +1230,45 @@ module core_top
     // Parameters to be modifed
     parameter CLK_VIDEO_NTSC = 32.0; // Must be filled E.g XX.X Hz - CLK_VIDEO
     parameter CLK_VIDEO_PAL  = 32.0; // Must be filled E.g XX.X Hz - CLK_VIDEO
+    parameter CLK_VIDEO_NTSC2 = 33.150180; // Must be filled E.g XX.X Hz - CLK_VIDEO
+    parameter CLK_VIDEO_PAL2  = 33.150180; // Must be filled E.g XX.X Hz - CLK_VIDEO
+    parameter CLK_VIDEO_NTSC3 = 34.895832; // Must be filled E.g XX.X Hz - CLK_VIDEO
+    parameter CLK_VIDEO_PAL3  = 34.895832; // Must be filled E.g XX.X Hz - CLK_VIDEO
 
     //PAL CLOCK FREQUENCY SHOULD BE 42.56274
-    localparam [39:0] NTSC_PHASE_INC = 40'd122992229676; // ((NTSC_REF * 2^40) / CLK_VIDEO_NTSC)
-    localparam [39:0] PAL_PHASE_INC  = 40'd152337980273; // ((PAL_REF * 2^40) / CLK_VIDEO_PAL)
+    localparam [39:0] NTSC_PHASE_INC1 = 40'd122992229676; // ((NTSC_REF * 2^40) / CLK_VIDEO_NTSC)
+    localparam [39:0] PAL_PHASE_INC1  = 40'd152337980273; // ((PAL_REF * 2^40) / CLK_VIDEO_PAL)
+    localparam [39:0] NTSC_PHASE_INC2 = 40'd118724886249; // ((NTSC_REF * 2^40) / CLK_VIDEO_NTSC2)
+    localparam [39:0] PAL_PHASE_INC2  = 40'd147052455484; // ((PAL_REF * 2^40) / CLK_VIDEO_PAL2)
+    localparam [39:0] NTSC_PHASE_INC3 = 40'd112785714628; // ((NTSC_REF * 2^40) / CLK_VIDEO_NTSC3)
+    localparam [39:0] PAL_PHASE_INC3  = 40'd139696206950; // ((PAL_REF * 2^40) / CLK_VIDEO_PAL3)
 
-    assign CHROMA_PHASE_INC = PALFLAG ? PAL_PHASE_INC : NTSC_PHASE_INC; 
+
     assign PALFLAG = (analogizer_video_type == 4'h4); 
 
+    always @(posedge clk_sys) begin
+        case(video_timing_lat)
+        VIDEO_50HZ: begin
+            CHROMA_PHASE_INC <= PALFLAG ? PAL_PHASE_INC1 : NTSC_PHASE_INC1; 
+        end
+        VIDEO_55HZ: begin
+            CHROMA_PHASE_INC <= PALFLAG ? PAL_PHASE_INC1 : NTSC_PHASE_INC1; 
+        end
+        VIDEO_57HZ: begin
+            CHROMA_PHASE_INC <= PALFLAG ? PAL_PHASE_INC2 : NTSC_PHASE_INC2; 
+        end
+        VIDEO_60HZ: begin
+            CHROMA_PHASE_INC <= PALFLAG ? PAL_PHASE_INC3 : NTSC_PHASE_INC3; 
+        end
+        endcase
+    end
 
     // H/V offset
     // Assigned to START + UP/DOWN/LEFT/RIGHT buttons
-    logic [4:0]	hoffset = 4'h0;
+    logic [5:0]	hoffset = 5'h0;
     logic [4:0]	voffset = 4'h0;
 
-    logic start_r, up_r, down_r, left_r, right_r;
+    logic start_r, up_r, down_r, left_r, right_r, btnA_r;
 
     always_ff @(posedge clk_sys) begin 
        start_r <= p1_controls[15];
@@ -1039,9 +1276,8 @@ module core_top
        down_r  <= p1_controls[1];
        left_r  <= p1_controls[2];
        right_r <= p1_controls[3]; 
-
+       btnA_r  <= p1_controls[4];
     end
-
     wire HSync,VSync;
     jtframe_resync jtframe_resync
     (
@@ -1066,7 +1302,7 @@ module core_top
     .DURATION_SEC(4)
     ) osd_debug_inst (
         .clk(clk_sys),
-        .reset(reset_sw),
+        .reset(reset),
         .pixel_ce(core_ce),
         .R_in(core_r),
         .G_in(core_g),
@@ -1079,6 +1315,7 @@ module core_top
         .key_left(p1_controls[15] && !right_r && p1_controls[3] ),//Detects if Start+Right was pressed
         .key_down(p1_controls[15] && !up_r && p1_controls[0]),    //Detects if Start+Up was pressed
         .key_up(p1_controls[15] && !down_r && p1_controls[1]),    //Detects if Start+Down was pressed
+        .key_A(p1_controls[15] && !btnA_r && p1_controls[4]),    //Detects if Start+A was pressed
         .R_out(RGB_out_R),
         .G_out(RGB_out_G),
         .B_out(RGB_out_B),
@@ -1091,7 +1328,8 @@ module core_top
         .analogizer_ready(!busy),
         .analogizer_video_type(analogizer_video_type),
         .snac_game_cont_type(snac_game_cont_type),
-        .snac_cont_assignment(snac_cont_assignment)
+        .snac_cont_assignment(snac_cont_assignment),
+        .vid_mode_out(vid_mode)
     );
 
     //32_000_000
@@ -1100,8 +1338,8 @@ module core_top
     openFPGA_Pocket_Analogizer #(.MASTER_CLK_FREQ(32_000_000), .LINE_LENGTH(512), .ADDRESS_ANALOGIZER_CONFIG(ADDRESS_ANALOGIZER_CONFIG)) analogizer (
         .clk_74a(clk_74a),
         .i_clk(clk_sys),
-        .i_rst_apf(~reset_n), //i_rst_apf is active high
-        .i_rst_core(reset_sw), //i_rst_core is active high
+        .i_rst_apf(reset), //i_rst_apf is active high
+        .i_rst_core(reset), //i_rst_core is active high
         //.i_ena(analogizer_ena),
         .i_ena(1'b1),
 
@@ -1163,4 +1401,13 @@ module core_top
         .o_stb()
     );
     /*[ANALOGIZER_HOOK_END]*/
+
+    //Debug signals 
+    // Set ports to output
+    assign port_tran_si_dir  = 1'b1;
+    assign port_tran_sck_dir = 1'b1;
+    assign port_tran_sd_dir  = 1'b1;
+    assign port_tran_si  = core_ce;
+    assign port_tran_sck = clk_sys;
+    assign port_tran_sd  = clk_vid;
 endmodule

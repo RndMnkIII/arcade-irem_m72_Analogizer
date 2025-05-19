@@ -110,30 +110,34 @@ module m72 (
 );
 
 // Divide 32Mhz clock by 4 for pixel clock
+wire SDBEN = sound_memrq & BRQ;
+
+// Divide 32Mhz clock by 4 for pixel clock
 reg paused = 0;
+reg [8:0] paused_v;
+reg [9:0] paused_h;
 
 always @(posedge CLK_32M) begin
-    if (pause_rq & ~paused & VBlank) begin
+    if (pause_rq & ~paused) begin
         if (~ls245_en & ~DBEN & ~mem_rq_active) begin
             paused <= 1;
+            paused_v <= V;
+            paused_h <= H;
         end
-    end else if (~pause_rq & paused & VBlank) begin
-        paused <= 0;
+    end else if (~pause_rq & paused) begin
+        paused <= ~(V == paused_v && H == paused_h);
     end
 end
 
-wire SDBEN = sound_memrq & BRQ;
-
 reg [1:0] ce_counter_cpu;
-reg [1:0] ce_counter_mcu;
 reg ce_cpu, ce_4x_cpu, ce_mcu;
+wire ce_mcu_nopause;
 
 always @(posedge CLK_32M) begin
     if (!reset_n) begin
         ce_cpu <= 0;
         ce_4x_cpu <= 0;
         ce_counter_cpu <= 0;
-        ce_counter_mcu <= 0;
         ce_mcu <= 0;
     end else begin
         ce_cpu <= 0;
@@ -142,23 +146,33 @@ always @(posedge CLK_32M) begin
 
         if (~paused) begin
             if (~ls245_en && ~SDBEN && ~mem_rq_active) begin // stall main cpu while fetching from sdram
+            //if (~ls245_en && ~mem_rq_active) begin // stall main cpu while fetching from sdram
                 ce_counter_cpu <= ce_counter_cpu + 2'd1;
                 ce_4x_cpu <= 1;
                 ce_cpu <= &ce_counter_cpu;
             end
-            ce_counter_mcu <= ce_counter_mcu + 2'd1;
-            ce_mcu <= &ce_counter_mcu;
+            ce_mcu <= ce_mcu_nopause;
         end
     end
 end
 
-wire ce_pix_half;
+wire ce_pix_half, ce_mcu_half;
 jtframe_frac_cen #(2) pixel_cen
 (
     .clk(CLK_32M),
-    .n(video_57hz ? 10'd115 : video_60hz ? 10'd207 : 10'd1),
-    .m(video_57hz ? 10'd444 : video_60hz ? 10'd760 : 10'd4),
+    .n(10'd1),
+    .m(10'd4),
     .cen({ce_pix_half, ce_pix})
+);
+
+jtframe_frac_cen #(2) mcu_cen
+(
+    .clk(CLK_32M),
+    //video_60hz
+    //video_57hz
+    .n(video_57hz ? 10'd153 : video_60hz ? 10'd221  : 10'd1),
+    .m(video_57hz ? 10'd634 : video_60hz ? 10'd964 : 10'd4),
+    .cen({ce_mcu_half, ce_mcu_nopause})
 );
 
 /* Global signals from schematics */
@@ -527,7 +541,7 @@ wire obj_pal_dout_valid;
 wire [4:0] obj_pal_r, obj_pal_g, obj_pal_b;
 kna91h014 obj_pal(
     .CLK_32M(CLK_32M),
-    .CE_PIX(ce_pix),
+    //.CE_PIX(ce_pix),
 
     .G(sprite_palette_memrq),
     .SELECT(0),

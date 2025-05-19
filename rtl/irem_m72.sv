@@ -36,6 +36,7 @@ module irem_m72
         input  wire        reset,               //! Reset
         // Core Config
         input  wire        pause,               //! Pause CPU
+        input  wire [1:0] vid_mode,         //! Video Mode
         input  wire  [7:0] mod_sw,              //! DIP Switch 1 (Default: 8'h00)
         input  wire  [7:0] dsw_1,               //! DIP Switch 1 (Default: 8'h00)
         input  wire  [7:0] dsw_2,               //! DIP Switch 2 (Default: 8'h00)
@@ -93,14 +94,14 @@ module irem_m72
                      HSDAT_IDX = 16'd2,
                      NVRAM_IDX = 16'd3;
 
-    wire  [1:0] vidmode    =  dsw_3[1:0];
+    //wire  [1:0] vidmode    =  dsw_3[1:0];
     wire        en_layer_a = ~dsw_3[2];
     wire        en_layer_b = ~dsw_3[3];
     wire        en_sprites = ~dsw_3[4];
     wire        filters    = ~dsw_3[5];
-    wire        video_50hz = vidmode == 1;
-    wire        video_57hz = vidmode == 2;
-    wire        video_60hz = vidmode == 3;
+    wire        video_50hz = vid_mode == 2'd1;
+    wire        video_57hz = vid_mode == 2'd2;
+    wire        video_60hz = vid_mode == 2'd3;
 
     assign video_preset = { 2'b00, mod_sw[0] };
 
@@ -284,7 +285,7 @@ module irem_m72
     assign sdram_clk = clk_ram;
     assign sdram_cke = 1'b1;
 
-    sdram_4w #(96) sdram
+    sdram_4w #(104) sdram
     (
         .SDRAM_DQ      ( sdram_dq                                    ),
         .SDRAM_A       ( sdram_a                                     ),

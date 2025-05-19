@@ -56,9 +56,11 @@ module sound (
     output        ram_we,
     output        ram_cs,
     input         ram_valid
+    //RndMnkIII 
 );
 
-
+reg [7:0] ram_dout_buf;
+reg ram_read_pending;   
 
 wire CE_AUDIO, CE_AUDIO_P1;
 jtframe_frac_cen #(2) jt51_cen

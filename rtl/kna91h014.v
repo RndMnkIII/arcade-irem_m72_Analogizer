@@ -1,97 +1,114 @@
-//------------------------------------------------------------------------------
-// SPDX-License-Identifier: GPL-3.0-or-later
-// SPDX-FileType: SOURCE
-// SPDX-FileCopyrightText: (c) 2022, Martin Donlon
-//------------------------------------------------------------------------------
+//============================================================================
+//  Irem M72 for MiSTer FPGA - Palette chip
 //
-// Irem M72 - Palette chip
-// Copyright (C) 2022 Martin Donlon
+//  Copyright (C) 2022 Martin Donlon
 //
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, version 3.
+//  This program is free software; you can redistribute it and/or modify it
+//  under the terms of the GNU General Public License as published by the Free
+//  Software Foundation; either version 2 of the License, or (at your option)
+//  any later version.
 //
-// This program is distributed in the hope that it will be useful, but
-// WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-// General Public License for more details.
+//  This program is distributed in the hope that it will be useful, but WITHOUT
+//  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+//  FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
+//  more details.
 //
-// You should have received a copy of the GNU General Public License
-// along with this program. If not, see <http://www.gnu.org/licenses/>.
-//
-//------------------------------------------------------------------------------
+//  You should have received a copy of the GNU General Public License along
+//  with this program; if not, write to the Free Software Foundation, Inc.,
+//  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+//============================================================================
 
-module kna91h014
-    (
-        input  wire        CLK_32M,
-        input  wire        CE_PIX,
+module kna91h014 (
+    input CLK_32M,
 
-        input  wire  [7:0] CB,         // Pins 3-10.
-        input  wire  [7:0] CA,         // Pins 11-18.
+    input [7:0] CB,	// Pins 3-10.
+    input [7:0] CA,	// Pins 11-18.
+    
+    input SELECT,	// Pin 50. "S"
+    
+    input E1_N,		// Pin 52.
+    input E2_N,		// Pin 51. CBLK.
 
-        input  wire        SELECT,     // Pin 50. "S"
+    input G,		// Pin 30. G_N.
+    
+    input MWR,	// Pin 29.
+    input MRD,	// Pin 28.
 
-        input  wire        E1_N,       // Pin 52.
-        input  wire        E2_N,       // Pin 51. CBLK.
+    input [15:0] DIN,	// Pins 25, 22-19 (split to input for Verilog).
+    output [15:0] DOUT,	// Pins 25, 22-19 (split to output for Verilog).
+    output DOUT_VALID,
+    
+    input [19:0] A,	// Pins 53-60
 
-        input  wire        G,          // Pin 30. G_N.
+    output reg [4:0] RED,	// Pins 47-43.
+    output reg [4:0] GRN,	// Pins 42-40, 37-36.
+    output reg [4:0] BLU	// Pins 35-31.
+);
 
-        input  wire        MWR,        // Pin 29.
-        input  wire        MRD,        // Pin 28.
+wire [7:0] A_IN = A[8:1];
+wire [2:0] A_S = { A[11], A[10], A[0] };
 
-        input  wire [15:0] DIN,        // Pins 25, 22-19 (split to input for Verilog).
-        output reg  [15:0] DOUT,       // Pins 25, 22-19 (split to output for Verilog).
-        output wire        DOUT_VALID,
+reg [7:0] color_addr;
 
-        input  wire [19:0] A,          // Pins 53-60
+always @(posedge CLK_32M) begin
+    color_addr <= SELECT ? CA : CB;
+end
 
-        output reg   [4:0] RED,        // Pins 47-43.
-        output reg   [4:0] GRN,        // Pins 42-40, 37-36.
-        output reg   [4:0] BLU         // Pins 35-31.
-    );
+// Palette RAMs...
+reg [4:0] ram_a [256];
+reg [4:0] ram_b [256];
+reg [4:0] ram_c [256];
 
-    wire [7:0] A_IN = A[8:1];
-    wire [2:0] A_S  = { A[11], A[10], A[0] };
+// RAM Addr decoding...
+wire ram_a_cs = A_S==3'b000 | A_S==3'b110;
+wire ram_b_cs = A_S==3'b010;
+wire ram_c_cs = A_S==3'b100;
 
-    wire [7:0] color_addr = SELECT ? CA : CB;
+// Write enable, and addr decoding for RAM writes.
+wire wr_ena = G & MWR;
+wire rd_ena = G & MRD;
 
-    // RAM Addr decoding...
-    wire ram_a_cs = A_S==3'b000 | A_S==3'b110;
-    wire ram_b_cs = A_S==3'b010;
-    wire ram_c_cs = A_S==3'b100;
+wire ram_wr_a = ram_a_cs & wr_ena;
+wire ram_wr_b = ram_b_cs & wr_ena;
+wire ram_wr_c = ram_c_cs & wr_ena;
 
-    // Write enable, and addr decoding for RAM writes.
-    wire wr_ena = G & MWR;
-    wire rd_ena = G & MRD;
+reg [4:0] red_lat;
+reg [4:0] grn_lat;
+reg [4:0] blu_lat;
 
-    assign DOUT_VALID = rd_ena;
+always @(posedge CLK_32M)
+begin
+    if (ram_wr_a)
+        ram_a[A_IN] <= DIN[4:0];
+    else
+        red_lat <= ram_a[A_IN];
 
-    // Palette RAM(s)
-    reg [4:0] ram[1024];
-    reg [1:0] cnt;
-    reg [4:0] color_out;
+    if (ram_wr_b)
+        ram_b[A_IN] <= DIN[4:0];
+    else
+        grn_lat <= ram_b[A_IN];
 
-    always @(negedge CLK_32M) begin
-        cnt <= cnt + 1'd1;
-        if (CE_PIX) begin
-            cnt <= 0;
-        end
-        color_out <= ram[{cnt, color_addr}];
-        case(cnt)
-            2'b01: RED <= color_out;
-            2'b10: GRN <= color_out;
-            2'b11: BLU <= color_out;
-            default:;
-        endcase
+    if (ram_wr_c)
+        ram_c[A_IN] <= DIN[4:0];
+    else
+        blu_lat <= ram_c[A_IN];
+end
+
+// DOUT read driver...
+assign DOUT = { 11'd0,
+    (ram_a_cs) ? red_lat :
+    (ram_b_cs) ? grn_lat :
+    (ram_c_cs) ? blu_lat : 5'h00 };
+assign DOUT_VALID = rd_ena;
+
+// Latch RAM outputs...
+
+always @(posedge CLK_32M) begin
+    if (~G) begin
+        RED <= ram_a[color_addr];
+        GRN <= ram_b[color_addr];
+        BLU <= ram_c[color_addr];
     end
-
-    wire [9:0] ram_a = {ram_a_cs ? 2'b00 : ram_b_cs ? 2'b01 : ram_c_cs ? 2'b10 : 2'b11, A_IN};
-
-    always @(posedge CLK_32M) begin
-        DOUT <= {11'd0, ram[ram_a]};
-        if (wr_ena) begin
-            ram[ram_a] <= DIN[4:0];
-        end
-    end
+end
 
 endmodule

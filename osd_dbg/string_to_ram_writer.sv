@@ -20,9 +20,9 @@ module string_to_ram_writer (
 
     state_t state;
 
-    localparam int STRING_MEM_SIZE = 349;
+    localparam int STRING_MEM_SIZE = 369;
     logic [7:0] string_data [0:STRING_MEM_SIZE-1];
-    logic [8:0] string_offsets [0:35];
+    logic [8:0] string_offsets [0:38];
 
     // Datos de las cadenas
     initial begin
@@ -375,6 +375,26 @@ module string_to_ram_writer (
         string_data[346] = "a";
         string_data[347] = "p";
         string_data[348] = 8'h00;
+        string_data[349] = "5";
+        string_data[350] = "5";
+        string_data[351] = "H";
+        string_data[352] = "z";
+        string_data[353] = 8'h00;
+        string_data[354] = "5";
+        string_data[355] = "0";
+        string_data[356] = "H";
+        string_data[357] = "z";
+        string_data[358] = 8'h00;
+        string_data[359] = "5";
+        string_data[360] = "7";
+        string_data[361] = "H";
+        string_data[362] = "z";
+        string_data[363] = 8'h00;
+        string_data[364] = "6";
+        string_data[365] = "0";
+        string_data[366] = "H";
+        string_data[367] = "z";
+        string_data[368] = 8'h00;
     end
 
     // Offsets de inicio de cada cadena
@@ -414,7 +434,10 @@ module string_to_ram_writer (
         string_offsets[32] = 337;    
         string_offsets[33] = 315;    // "PSX Digital"
         string_offsets[34] = 337;    
-        string_offsets[35] = 327;    // "PSX Analog"
+        string_offsets[35] = 349;    // "55Hz"
+        string_offsets[36] = 354;    // "50Hz"
+        string_offsets[37] = 359;    // "57Hz"
+        string_offsets[38] = 364;    // "60Hz"
     end
 
     logic [7:0] current_char;

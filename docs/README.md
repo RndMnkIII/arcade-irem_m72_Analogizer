@@ -3,6 +3,7 @@
 * [Analogizer Release 0.1.2] Initial relase with Analogizer support.
 * [Analogizer Release 0.1.4] Added H/Voffset control for Analogizer video output using an OSD.
 * [Analogizer Release 0.1.6 - 12/05/2025] Fixed OSD. Now shows Analogizer configuration and Analogizer Logo.
+* [Analogizer Release 0.2.0 - 19/05/2025] Added 50/57/60Hz video modes. OSD shows the current video mode.
 
 [![Active Development](https://img.shields.io/badge/Maintenance%20Level-Actively%20Developed-brightgreen.svg)](#status-of-features)
 [![Build](https://github.com/opengateware/arcade-irem_m72/actions/workflows/build.yml/badge.svg)](https://github.com/opengateware/arcade-irem_m72/actions/workflows/build.yml)
@@ -25,14 +26,18 @@ This utility allows you to do a few things beyond the usual SNAC controller type
 
 
 ### OSD Controls:
-The current release allows to adjust Horizontal/Vertical offset of the image with a range of -15/+15 units using the combination of inputs Start + Up/Down/Left/Right:
+The current release allows to adjust Horizontal/Vertical offset of the image with a range of -15/+15 units using the combination of inputs Start + Up/Down/Left/Right
+and change video mode using Start + Button A press:
 
 * ▶Start + ⬆️: increase Vertical Offset
 * ▶Start + ⬇️: decrease Vertical Offset
 * ▶Start + ⬅️: increase Horizontal Offset
 * ▶Start + ➡️: decrease Horizontal Offset
+* ▶Start + 🅐: next video mode (55/50/57/60Hz)
 
 The OSD also shows the Analogizer settings.
+**Warning:** The Irem M72 57Hz/60Hz video modes currently are outside of typical 15.625/15.734KHz horizontal frequency for CRT NTSC/PAL TV and
+could don't work with your current CRT setup.
 
 The core can output RGBS, RGsB, YPbPr, Y/C and SVGA scandoubler (50% scanlines) video signals.
 | Video output | Status | SOG Switch(Only R2,R3 Analogizer) |

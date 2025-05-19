@@ -14,8 +14,33 @@
 # ==============================================================================
 # Create Clock
 # ==============================================================================
+############################################################
+# RELOJES DERIVADOS DEL PLL PRINCIPAL (core_pll)
+# Observado por report_clocks (con preservación jerárquica)
+############################################################
+
+create_clock -add -name clk_dram -period 9.552 \
+  [get_clocks {ic|core_pll|core_pll_inst|altera_pll_i|cyclonev_pll|counter[0].output_counter|divclk}]
+
+create_clock -add -name clk_sys -period 28.658 \
+  [get_clocks {ic|core_pll|core_pll_inst|altera_pll_i|cyclonev_pll|counter[1].output_counter|divclk}]
+
+create_clock -add -name clk_video -period 114.635 \
+  [get_clocks {ic|core_pll|core_pll_inst|altera_pll_i|cyclonev_pll|counter[2].output_counter|divclk}]
+
+############################################################
+# RELOJES DE AUDIO DERIVADOS DEL PLL DE AUDIO
+############################################################
+
+############################################################
+# RELACIONES MULTICYCLE (SDRAM/LOGIC)
+############################################################
+
 
 # ==============================================================================
+
+set_multicycle_path 4 -from [get_registers *mcu*] -to [get_registers *mcu*]
+set_multicycle_path 3 -hold -from [get_registers *mcu*] -to [get_registers *mcu*]
 # Create Generated Clock
 # ==============================================================================
 
