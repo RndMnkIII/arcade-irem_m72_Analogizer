@@ -42,6 +42,7 @@ module osd_top #(
     output logic signed [5:0] h_offset_out,
     output logic signed [4:0] v_offset_out,
     output logic [1:0] vid_mode_out,
+    output logic osd_pause_out,
     //Analogizer settings
     input logic       analogizer_ready,
     input logic [3:0] analogizer_video_type,
@@ -369,6 +370,8 @@ module osd_top #(
         .enable(key_leftr || key_rightr || key_downr || key_upr || key_A_r),
         .active(osd_active)
     );
+
+    assign osd_pause_out = osd_active;
 
     always_ff @(posedge clk) begin
          if (pixel_ce) begin

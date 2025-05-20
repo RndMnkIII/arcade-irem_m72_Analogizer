@@ -1230,18 +1230,18 @@ module core_top
     // Parameters to be modifed
     parameter CLK_VIDEO_NTSC = 32.0; // Must be filled E.g XX.X Hz - CLK_VIDEO
     parameter CLK_VIDEO_PAL  = 32.0; // Must be filled E.g XX.X Hz - CLK_VIDEO
-    parameter CLK_VIDEO_NTSC2 = 33.150180; // Must be filled E.g XX.X Hz - CLK_VIDEO
-    parameter CLK_VIDEO_PAL2  = 33.150180; // Must be filled E.g XX.X Hz - CLK_VIDEO
-    parameter CLK_VIDEO_NTSC3 = 34.895832; // Must be filled E.g XX.X Hz - CLK_VIDEO
-    parameter CLK_VIDEO_PAL3  = 34.895832; // Must be filled E.g XX.X Hz - CLK_VIDEO
+    parameter CLK_VIDEO_NTSC2 = 33.15; // Must be filled E.g XX.X Hz - CLK_VIDEO
+    parameter CLK_VIDEO_PAL2  = 33.15; // Must be filled E.g XX.X Hz - CLK_VIDEO
+    parameter CLK_VIDEO_NTSC3 = 34.8975; // Must be filled E.g XX.X Hz - CLK_VIDEO
+    parameter CLK_VIDEO_PAL3  = 34.8975; // Must be filled E.g XX.X Hz - CLK_VIDEO
 
     //PAL CLOCK FREQUENCY SHOULD BE 42.56274
     localparam [39:0] NTSC_PHASE_INC1 = 40'd122992229676; // ((NTSC_REF * 2^40) / CLK_VIDEO_NTSC)
     localparam [39:0] PAL_PHASE_INC1  = 40'd152337980273; // ((PAL_REF * 2^40) / CLK_VIDEO_PAL)
-    localparam [39:0] NTSC_PHASE_INC2 = 40'd118724886249; // ((NTSC_REF * 2^40) / CLK_VIDEO_NTSC2)
-    localparam [39:0] PAL_PHASE_INC2  = 40'd147052455484; // ((PAL_REF * 2^40) / CLK_VIDEO_PAL2)
-    localparam [39:0] NTSC_PHASE_INC3 = 40'd112785714628; // ((NTSC_REF * 2^40) / CLK_VIDEO_NTSC3)
-    localparam [39:0] PAL_PHASE_INC3  = 40'd139696206950; // ((PAL_REF * 2^40) / CLK_VIDEO_PAL3)
+    localparam [39:0] NTSC_PHASE_INC2 = 40'd118725530909; // ((NTSC_REF * 2^40) / CLK_VIDEO_NTSC2)
+    localparam [39:0] PAL_PHASE_INC2  = 40'd147053253959; // ((PAL_REF * 2^40) / CLK_VIDEO_PAL2)
+    localparam [39:0] NTSC_PHASE_INC3 = 40'd112780323795; // ((NTSC_REF * 2^40) / CLK_VIDEO_NTSC3)
+    localparam [39:0] PAL_PHASE_INC3  = 40'd139689529873; // ((PAL_REF * 2^40) / CLK_VIDEO_PAL3)
 
 
     assign PALFLAG = (analogizer_video_type == 4'h4); 
@@ -1329,7 +1329,8 @@ module core_top
         .analogizer_video_type(analogizer_video_type),
         .snac_game_cont_type(snac_game_cont_type),
         .snac_cont_assignment(snac_cont_assignment),
-        .vid_mode_out(vid_mode)
+        .vid_mode_out(vid_mode),
+        .osd_pause_out (pause_req)
     );
 
     //32_000_000

@@ -145,8 +145,8 @@ always @(posedge CLK_32M) begin
         ce_mcu <= 0;
 
         if (~paused) begin
-            if (~ls245_en && ~SDBEN && ~mem_rq_active) begin // stall main cpu while fetching from sdram
-            //if (~ls245_en && ~mem_rq_active) begin // stall main cpu while fetching from sdram
+            //if (~ls245_en && ~SDBEN && ~mem_rq_active) begin // stall main cpu while fetching from sdram
+            if (~ls245_en && ~mem_rq_active) begin // stall main cpu while fetching from sdram
                 ce_counter_cpu <= ce_counter_cpu + 2'd1;
                 ce_4x_cpu <= 1;
                 ce_cpu <= &ce_counter_cpu;
