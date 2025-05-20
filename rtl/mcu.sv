@@ -153,8 +153,8 @@ always @(posedge CLK_32M) begin
 
             16'hcxxx: begin
                 //delayed_ce_count <= 7;  //RndMnkIII Fix
-                delayed_ce_count <= 14;  //RndMnkIII Fix
                 //if (ext_we) delayed_ce_count <= 14; //RndMnkIII Fix
+                delayed_ce_count <= 14; //RndMnkIII Fix
                 ext_ram_addr <= ext_addr[11:0];
                 ext_ram_dout <= ext_dout;
                 ext_ram_cs <= ext_cs;

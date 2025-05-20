@@ -10,7 +10,7 @@
             "description": "[Analogizer] Irem M72 Compatible Gateware IP Core with Analogizer support.",
             "author": "RndMnkIII",
             "url": "https://github.com/RndMnkIII/arcade-irem_m72_Analogizer",
-            "version": "0.2.2",
+            "version": "0.2.4",
             "date_release": "2025-05-20"
         },
         "framework": {
