@@ -1,10 +1,9 @@
 // Project: OSD Overlay
 // File: video_timing_tracker.sv
-// Description: Overlay module for displaying OSD (On-Screen Display) characters
-//              on a VGA screen. It uses a character RAM and a font ROM to
-//              generate the pixel data for the OSD characters.
+// Description: Video timing tracker calculates the current pixel position and frame size
+// based on horizontal and vertical sync signals.
 // Author: @RndMnkIII
-// Date: 2025-05-09
+// Date: 2025-05-23
 // License: MIT
 //
 `default_nettype none

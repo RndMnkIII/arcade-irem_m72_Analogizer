@@ -6,7 +6,10 @@
 * [Analogizer Release 0.2.0 - 19/05/2025] Added 50/57/60Hz video modes. OSD shows the current video mode.
 * [Analogizer Release 0.2.2 - 20/05/2025] Fixed occasional crash with Legend of Hero Tonma during boot test (RAM NG 7). OSD now pauses the game.
 * [Analogizer Release 0.2.4 - 20/05/2025] Fixed problem with MCU ram writes.
-  
+* [Analogizer Release 0.2.8 - 27/05/2025] Fixed OSD SNAC device show string.
+
+All Analogizer features added by [@RndMnkIII](https://github.com/RndMnkIII).
+
 [![Active Development](https://img.shields.io/badge/Maintenance%20Level-Actively%20Developed-brightgreen.svg)](#status-of-features)
 [![Build](https://github.com/opengateware/arcade-irem_m72/actions/workflows/build.yml/badge.svg)](https://github.com/opengateware/arcade-irem_m72/actions/workflows/build.yml)
 [![release](https://img.shields.io/github/release/opengateware/arcade-irem_m72.svg)](https://github.com/opengateware/arcade-irem_m72/releases)

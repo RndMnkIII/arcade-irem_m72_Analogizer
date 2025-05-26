@@ -22,7 +22,7 @@ module string_to_ram_writer (
 
     localparam int STRING_MEM_SIZE = 369;
     logic [7:0] string_data [0:STRING_MEM_SIZE-1];
-    logic [8:0] string_offsets [0:38];
+    logic [8:0] string_offsets [0:39];
 
     // Datos de las cadenas
     initial begin
@@ -434,10 +434,11 @@ module string_to_ram_writer (
         string_offsets[32] = 337;    
         string_offsets[33] = 315;    // "PSX Digital"
         string_offsets[34] = 337;    
-        string_offsets[35] = 349;    // "55Hz"
-        string_offsets[36] = 354;    // "50Hz"
-        string_offsets[37] = 359;    // "57Hz"
-        string_offsets[38] = 364;    // "60Hz"
+        string_offsets[35] = 327;    // "PSX Analog"
+        string_offsets[36] = 349;    // "55Hz"
+        string_offsets[37] = 354;    // "50Hz"
+        string_offsets[38] = 359;    // "57Hz"
+        string_offsets[39] = 364;    // "60Hz"
     end
 
     logic [7:0] current_char;

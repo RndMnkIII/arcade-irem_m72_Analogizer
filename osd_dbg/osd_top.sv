@@ -188,7 +188,7 @@ module osd_top #(
                                     state    <= INIT_NEXT;
                                 end 
                                 3'd3: begin
-                                    str_index     <= {4'b0,vid_mode} + 6'd35; //see string_to_ram_writer
+                                    str_index     <= {4'b0,vid_mode} + 6'd36; //see string_to_ram_writer
                                     str_base_addr <= HZ_POS;
                                     data_info_idx <= data_info_idx + 1;
                                     start_str     <= 1;
